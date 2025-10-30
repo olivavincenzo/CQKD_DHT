@@ -5,6 +5,11 @@ kademlia
 asyncio-mqtt
 aiofiles
 
+# API e Web
+fastapi
+uvicorn[standard]
+httpx
+
 # Crittografia
 cryptography
 pycryptodome

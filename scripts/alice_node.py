@@ -17,7 +17,7 @@ async def main():
     e avvia la generazione della chiave.
     """
     port = int(os.getenv("DHT_PORT", 6000))
-    bob_address = os.getenv("BOB_ADDRESS")
+    bob_address = os.getenv("BOB_DHT_ADDRESS")
     bootstrap_nodes_str = os.getenv("BOOTSTRAP_NODES")
     node_id = "alice"
 

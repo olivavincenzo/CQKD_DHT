@@ -24,7 +24,9 @@ async def main():
 
     bootstrap_nodes = [(host, int(b_port)) for host, b_port in (addr.strip().split(':') for addr in bootstrap_nodes_str.split(','))]
 
-    logger.info(f"Avvio Bob node '{node_id}' su porta {port}...")
+
+    logger.info(f"Avvio Bob node '{node_id}' su porta {port}... e con bootstrap_nodes{bootstrap_nodes}")
+
     bob_node = CQKDNode(port=port, node_id=node_id)
     await bob_node.start()
     await bob_node.bootstrap(bootstrap_nodes)

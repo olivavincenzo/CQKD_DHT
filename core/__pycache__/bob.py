@@ -233,3 +233,80 @@ class Bob:
         raise TimeoutError("Timeout waiting for QPC collision results")
 
 
+
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+import uvicorn
+from pydantic import BaseModel
+import os
+import asyncio
+
+# Variabili globali per il nodo e il protocollo
+bob_node: Optional[CQKDNode] = None
+bob_protocol: Optional[Bob] = None
+
+def get_bootstrap_nodes():
+    """Legge e formatta i nodi di bootstrap dalle variabili d'ambiente."""
+    bootstrap_nodes_str = os.getenv("BOOTSTRAP_NODES")
+    if not bootstrap_nodes_str:
+        logger.error("✗ La variabile d'ambiente BOOTSTRAP_NODES è richiesta.")
+        raise ValueError("BOOTSTRAP_NODES non impostata")
+    
+    nodes = []
+    for addr in bootstrap_nodes_str.split(','):
+        host, port = addr.strip().split(':')
+        nodes.append((host, int(port)))
+    return nodes
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Gestisce il ciclo di vita dell'applicazione FastAPI."""
+    global bob_node, bob_protocol
+    
+    port = int(os.getenv("DHT_PORT", 6001))
+    bootstrap_nodes = get_bootstrap_nodes()
+    
+    logger.info(f"Avvio Bob Service su porta {port}...")
+    bob_node = CQKDNode(port=port, node_id="bob")
+    await bob_node.start()
+    await bob_node.bootstrap(bootstrap_nodes)
+    
+    bob_protocol = Bob(bob_node)
+    logger.info("✓ Bob Service pronto e connesso alla DHT.")
+    
+    yield
+    
+    logger.info("Shutdown Bob Service...")
+    if bob_node:
+        await bob_node.stop()
+
+app = FastAPI(title="Bob Controller Service", version="1.0.0", lifespan=lifespan)
+
+@app.get("/health", summary="Health Check")
+async def health():
+    """Controlla lo stato del servizio di Bob."""
+    if not bob_protocol or not bob_node:
+        raise HTTPException(status_code=503, detail="Bob controller non inizializzato")
+    return {"status": "healthy", "node_id": bob_node.node_id}
+
+class ProcessIdRequest(BaseModel):
+    process_id: str
+
+@app.post("/receive-key", status_code=202, summary="Avvia la ricezione della chiave")
+async def receive_key_endpoint(req: ProcessIdRequest, background_tasks: BackgroundTasks):
+    """
+    Endpoint per avviare il processo di ricezione della chiave in background.
+    """
+    if not bob_protocol:
+        raise HTTPException(status_code=503, detail="Bob controller non inizializzato.")
+    
+    logger.info(f"Richiesta API ricevuta: avvio ricezione chiave per process_id: {req.process_id}")
+    
+    # Esegui il lungo processo di ricezione in background
+    background_tasks.add_task(bob_protocol.receive_key, req.process_id)
+    
+    return {"status": "Key reception process started in background", "process_id": req.process_id}
+
+if __name__ == "__main__":
+    # La porta 8000 è quella interna al container. Sarà mappata nel docker-compose.
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -5,31 +5,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: cqkd-dht-node:latest # Nome immagine più specifico
+    image: cqkd-dht-node:latest
     container_name: cqkd-bootstrap
     environment:
       - DHT_PORT=5678
-      - LOG_LEVEL=INFO
     ports:
       - "5678:5678/udp"
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.bootstrap_node"]
-    restart: on-failure
+    restart: unless-stopped
 
   worker:
     image: cqkd-dht-node:latest
-    # Non definire un container_name per permettere lo scaling
     environment:
-      - DHT_PORT=7000 # Porta interna per i worker
+      - DHT_PORT=7000
       - BOOTSTRAP_NODES=bootstrap:5678
-      - LOG_LEVEL=INFO
     depends_on:
       - bootstrap
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    restart: on-failure
+    restart: unless-stopped
 
   bob:
     image: cqkd-dht-node:latest
@@ -37,14 +34,14 @@ services:
     environment:
       - DHT_PORT=6001
       - BOOTSTRAP_NODES=bootstrap:5678
-      - LOG_LEVEL=DEBUG
     depends_on:
       - bootstrap
-      - worker # Bob attende che almeno un worker sia avviato
     networks:
       - cqkd-network
+    ports:
+      - "8002:8000" # Mappa la porta interna 8000 di Bob alla 8002 dell'host
     command: ["python", "-m", "scripts.bob_node"]
-    restart: no # Non riavviare Bob, è un processo one-shot
+    restart: unless-stopped
 
   alice:
     image: cqkd-dht-node:latest
@@ -52,14 +49,16 @@ services:
     environment:
       - DHT_PORT=6000
       - BOOTSTRAP_NODES=bootstrap:5678
-      - BOB_ADDRESS=bob:6001
-      - LOG_LEVEL=DEBUG
+      - BOB_DHT_ADDRESS=bob:6001 # Indirizzo di Bob nella rete DHT
     depends_on:
-      - bob # Alice attende che Bob sia pronto a ricevere
+      - bob # Alice deve assicurarsi che Bob sia avviato per potergli parlare via API
+      - worker
     networks:
       - cqkd-network
-    command: ["python", "-m", "scripts.alice_node"]
-    restart: no # Anche Alice è un processo one-shot
+    ports:
+      - "6000:8000" # Mappa la porta interna 8000 di Alice alla 8001 dell'host
+    command: ["uvicorn", "protocol.alice:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
 
 networks:
   cqkd-network:

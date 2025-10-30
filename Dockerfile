@@ -26,6 +26,10 @@ COPY . .
 
 # Crea un utente non-root per maggiore sicurezza
 RUN useradd -m -u 1000 cqkduser
+
+# Assegna la proprietà della directory di lavoro all'utente cqkduser
+RUN chown -R cqkduser:cqkduser /app
+
 USER cqkduser
 
 # Il comando di default verrà specificato nel docker-compose.yml

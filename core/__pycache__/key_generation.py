@@ -6,7 +6,7 @@ from core.node_states import NodeRole
 from config import settings
 from utils.logging_config import get_logger
 from discovery.discovery_strategies import SmartDiscoveryStrategy
-import os
+
 
 logger = get_logger(__name__)
 
@@ -29,8 +29,7 @@ class KeyGenerationOrchestrator:
     @staticmethod
     def _generate_process_id() -> str:
         """Genera un ID univoco per il processo di generazione chiave"""
-        return os.getenv("SESSION_ID", "default_session")
-        #return f"cqkd_{secrets.token_hex(16)}"
+        return f"cqkd_{secrets.token_hex(16)}"
     
 
     def calculate_required_nodes(self, desired_key_length: int) -> Dict[str, int]:

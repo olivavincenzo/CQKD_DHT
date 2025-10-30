@@ -84,7 +84,6 @@ class Alice:
         # ========== STEP 7: Alice apre process_id unico ==========
         logger.info("step_7_complete", process_id=process_id)
         
-        
         # ========== STEP 8-9: Alice comanda nodi e riceve risultati ==========
         self.alice_bases = BaseGenerator.generate_base_sequence(lk)
         
@@ -337,59 +336,108 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 import uvicorn
 from pydantic import BaseModel
 import os
+import httpx
+import asyncio
+
+# Variabili globali
+alice_node: Optional[CQKDNode] = None
+alice_protocol: Optional[Alice] = None
+
+def get_bootstrap_nodes():
+    """Legge e formatta i nodi di bootstrap dalle variabili d'ambiente."""
+    bootstrap_nodes_str = os.getenv("BOOTSTRAP_NODES")
+    if not bootstrap_nodes_str:
+        logger.error("✗ La variabile d'ambiente BOOTSTRAP_NODES è richiesta.")
+        raise ValueError("BOOTSTRAP_NODES non impostata")
+    
+    nodes = []
+    for addr in bootstrap_nodes_str.split(','):
+        host, port = addr.strip().split(':')
+        nodes.append((host, int(port)))
+    return nodes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global alice_node
+    """Gestisce il ciclo di vita dell'applicazione FastAPI."""
+    global alice_node, alice_protocol
+    
     port = int(os.getenv("DHT_PORT", 6000))
-    bootstrap_nodes_str = os.getenv("BOOTSTRAP_NODES")
-    node_id = "alice"
-    bootstrap_nodes = [(host, int(b_port)) for host, b_port in (addr.strip().split(':') for addr in bootstrap_nodes_str.split(','))]
+    bob_dht_address = os.getenv("BOB_DHT_ADDRESS") # Indirizzo DHT di Bob
+    bootstrap_nodes = get_bootstrap_nodes()
 
-    logger.info(f"Avvio Alice node '{node_id}' su porta {port}...")
-    alice_node = CQKDNode(port=port, node_id=node_id)
+    if not bob_dht_address:
+        raise ValueError("La variabile d'ambiente BOB_DHT_ADDRESS è richiesta.")
+
+    logger.info(f"Avvio Alice Service su porta {port}...")
+    alice_node = CQKDNode(port=port, node_id="alice")
     await alice_node.start()
     await alice_node.bootstrap(bootstrap_nodes)
-    logger.info(f"✓ Alice node '{node_id}' connessa alla rete DHT.")
     
-
+    alice_protocol = Alice(alice_node, bob_address=bob_dht_address)
+    logger.info("✓ Alice Service pronto e connesso alla DHT.")
+    
     yield
+    
+    logger.info("Shutdown Alice Service...")
     if alice_node:
         await alice_node.stop()
 
 app = FastAPI(title="Alice Controller Service", version="1.0.0", lifespan=lifespan)
 
+@app.get("/health", summary="Health Check")
+async def health():
+    """Controlla lo stato del servizio di Alice."""
+    if not alice_protocol or not alice_node:
+        raise HTTPException(status_code=503, detail="Alice controller non inizializzato")
+    return {"status": "healthy", "node_id": alice_node.node_id}
 
 class KeyRequest(BaseModel):
-    desired_key_length: int
+    desired_key_length: int = 16
 
-@app.post("/generate-key", status_code=202)
-async def generate_key(req: KeyRequest):
-    """Endpoint to start the key generation process."""
+async def trigger_bob_and_generate_key(req: KeyRequest):
+    """Task in background che orchestra Bob e avvia la generazione della chiave."""
+    if not alice_protocol:
+        logger.error("Alice protocol non è inizializzato.")
+        return
 
-    desired_key_length= req.desired_key_length
-    bob_address = os.getenv("BOB_DHT_ADDRESS")
-    alice_protocol = Alice(alice_node, bob_address=bob_address)
-
-    PROCESS_ID_KEY = "cqkd_process_id"
     process_id = alice_protocol.orchestrator.process_id
+    bob_api_url = os.getenv("BOB_API_URL") # Es: http://bob:8000
 
-    await alice_node.store_data(PROCESS_ID_KEY, process_id)
-    logger.info(f"Alice pubblica il process_id '{process_id}' sulla chiave DHT '{PROCESS_ID_KEY}' per Bob...")
+    if not bob_api_url:
+        logger.error("La variabile d'ambiente BOB_API_URL non è impostata!")
+        return
 
-    logger.info("✓ process_id pubblicato.")
+    # 1. Chiama l'API di Bob per dirgli di iniziare
+    try:
+        async with httpx.AsyncClient() as client:
+            logger.info(f"Contatto Bob su {bob_api_url}/receive-key per avviare il processo {process_id}")
+            response = await client.post(
+                f"{bob_api_url}/receive-key",
+                json={"process_id": process_id},
+                timeout=10.0
+            )
+            response.raise_for_status() # Solleva un'eccezione per errori 4xx/5xx
+            logger.info(f"✓ Bob ha accettato la richiesta (status: {response.status_code})")
+    except httpx.RequestError as e:
+        logger.error(f"✗ Errore nel contattare Bob: {e}")
+        return
 
-    # Avvia la generazione della chiave
-    logger.info(f"Alice avvia la generazione di una chiave a {desired_key_length} bit...")
+    # 2. Avvia la generazione della chiave di Alice
+    try:
+        await alice_protocol.generate_key(desired_length_bits=req.desired_key_length)
+    except Exception as e:
+        logger.error(f"✗ Errore durante la generazione della chiave di Alice: {e}", exc_info=True)
+
+@app.post("/generate-key", status_code=202, summary="Avvia la generazione di una nuova chiave")
+async def generate_key_endpoint(req: KeyRequest, background_tasks: BackgroundTasks):
+    """
+    Endpoint per avviare l'intero processo di generazione della chiave.
+    Orchestra Bob tramite API e poi avvia il processo di Alice, tutto in background.
+    """
+    logger.info(f"Richiesta API ricevuta: avvio generazione chiave da {req.desired_key_length} bit.")
+    background_tasks.add_task(trigger_bob_and_generate_key, req)
     
-    alice_key = await alice_protocol.generate_key(desired_length_bits=desired_key_length)
-
-    if alice_key:
-        logger.info(f"SUCCESS! Alice ha generato la chiave: {alice_key.hex()}")
-    else:
-        logger.error("✗ Alice non è riuscita a generare la chiave.")
-
-    return {"status": "Key generata"}
+    return {"status": "Key generation process started in background"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
