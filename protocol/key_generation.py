@@ -7,6 +7,7 @@ from config import settings
 from utils.logging_config import get_logger
 from discovery.discovery_strategies import SmartDiscoveryStrategy
 import os
+import math
 
 logger = get_logger(__name__)
 
@@ -44,7 +45,7 @@ class KeyGenerationOrchestrator:
             dict: Numero di nodi per ogni ruolo
         """
         # lk = 2.5 * lc (lunghezza chiave iniziale)
-        lk = int(settings.key_length_multiplier * desired_key_length)
+        lk = math.ceil(settings.key_length_multiplier * desired_key_length)
 
         # Protocollo ottimizzato: 5lk nodi totali
         return {
