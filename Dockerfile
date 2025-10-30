@@ -16,6 +16,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Imposta la variabile d'ambiente PYTHONPATH per includere le librerie installate
+ENV PATH="/install/bin:$PATH"
 ENV PYTHONPATH=/install/lib/python3.11/site-packages
 
 # Copia le dipendenze installate dallo stage builder

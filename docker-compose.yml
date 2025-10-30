@@ -39,7 +39,8 @@ services:
     networks:
       - cqkd-network
     ports:
-      - "8002:8000" # Mappa la porta interna 8000 di Bob alla 8002 dell'host
+      - "8002:8000" # Mappa la porta interna 8000 di Bob (FastAPI/API) alla 8002 dell'host
+      - "6001:6001/udp" # Mappa la porta interna 6001 di Bob (DHT) alla 6001 dell'host
     command: ["python", "-m", "scripts.bob_node"]
     restart: unless-stopped
 
@@ -56,7 +57,8 @@ services:
     networks:
       - cqkd-network
     ports:
-      - "6000:8000" # Mappa la porta interna 8000 di Alice alla 8001 dell'host
+      - "8001:8000" # Mappa la porta interna 8000 di Alice (FastAPI) alla 8001 dell'host
+      - "6000:6000/udp" # Mappa la porta interna 6000 di Alice (DHT) alla 6000 dell'host
     command: ["uvicorn", "protocol.alice:app", "--host", "0.0.0.0", "--port", "8000"]
     restart: unless-stopped
 

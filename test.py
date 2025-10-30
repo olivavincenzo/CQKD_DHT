@@ -114,10 +114,13 @@ async def test_complete_cqkd_protocol():
         logger.info("  (Questo include discovery nodi, allocazione, generazione fotoni)\n")
 
         # ✅ AVVIA BOB IN BACKGROUND
-        process_id = alice.orchestrator.process_id
-        bob_task = asyncio.create_task(bob.receive_key(process_id))
+        # Bob deve conoscere il 'session_id' per recuperare i dettagli dalla DHT
+        # e partecipare alla generazione della chiave avviata da Alice.
+        session_id = alice.orchestrator.session_id
+        logger.info(f"Step 4.1: Avvio di Bob in background per la sessione '{session_id}'...")
+        bob_task = asyncio.create_task(bob.receive_key(session_id))
         
-        # Alice genera chiave
+        # Alice genera e pubblica la chiave sulla DHT
         # NOTA: Questo è dove avviene TUTTO il protocollo CQKD
         try:
             alice_key = await alice.generate_key(
@@ -235,7 +238,7 @@ async def main():
 
 if __name__ == "__main__":
     print("\nUSO:")
-    print("  python scripts/test_complete_protocol.py          # Test completo CQKD")
-    print("  python scripts/test_complete_protocol.py --simple # Test solo discovery\n")
+    print("  python test.py          # Test completo CQKD")
+    print("  python test.py --simple # Test solo discovery\n")
     
     asyncio.run(main())

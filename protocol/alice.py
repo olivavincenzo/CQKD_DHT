@@ -1,6 +1,6 @@
 import asyncio
 import secrets
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from core.dht_node import CQKDNode
 from core.node_states import NodeRole
 from protocol.key_generation import KeyGenerationOrchestrator
@@ -332,11 +332,29 @@ class Alice:
 
 
 
+import socket
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 import uvicorn
 from pydantic import BaseModel
 import os
+
+async def resolve_bootstrap_nodes(bootstrap_nodes_raw: List[Tuple[str, int]]) -> List[Tuple[str, int]]:
+    resolved_nodes = []
+    for host, port in bootstrap_nodes_raw:
+        try:
+            addr_info = await asyncio.get_event_loop().getaddrinfo(
+                host, port, type=socket.SOCK_DGRAM
+            )
+            ip_address = addr_info[0][-1][0]
+            resolved_nodes.append((ip_address, port))
+            logger.info(f"Resolved bootstrap node: {host}:{port} -> {ip_address}:{port}")
+        except socket.gaierror as e:
+            logger.error(f"Failed to resolve bootstrap host {host}: {e}")
+            # If resolution fails, it's a critical error for bootstrapping
+            raise
+    return resolved_nodes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -344,12 +362,14 @@ async def lifespan(app: FastAPI):
     port = int(os.getenv("DHT_PORT", 6000))
     bootstrap_nodes_str = os.getenv("BOOTSTRAP_NODES")
     node_id = "alice"
-    bootstrap_nodes = [(host, int(b_port)) for host, b_port in (addr.strip().split(':') for addr in bootstrap_nodes_str.split(','))]
+    
+    bootstrap_nodes_raw = [(host, int(b_port)) for host, b_port in (addr.strip().split(':') for addr in bootstrap_nodes_str.split(','))]
+    resolved_bootstrap_nodes = await resolve_bootstrap_nodes(bootstrap_nodes_raw)
 
     logger.info(f"Avvio Alice node '{node_id}' su porta {port}...")
     alice_node = CQKDNode(port=port, node_id=node_id)
     await alice_node.start()
-    await alice_node.bootstrap(bootstrap_nodes)
+    await alice_node.bootstrap(resolved_bootstrap_nodes) # Use resolved nodes
     logger.info(f"✓ Alice node '{node_id}' connessa alla rete DHT.")
     
 
