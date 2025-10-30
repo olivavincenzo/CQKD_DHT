@@ -1,0 +1,32 @@
+# Core DHT
+kademlia
+
+# Async e Network
+asyncio-mqtt
+aiofiles
+
+# Crittografia
+cryptography
+pycryptodome
+
+# Utilità
+numpy
+pydantic
+pydantic-settings
+python-dotenv
+
+# Logging e Monitoring
+structlog
+prometheus-client
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+
+# Development
+black
+flake8
+mypy
+isort
