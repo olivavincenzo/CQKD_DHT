@@ -100,6 +100,7 @@ class KeyGenerationOrchestrator:
             routing_info = self.coordinator.get_routing_table_info()
             network_health = routing_info.get("network_health", {})
             total_nodes = routing_info.get("total_nodes", 0)
+            all_node_id = routing_info.get("all_nodes")
             
             logger.info(
                 "pre_discovery_network_analysis",
@@ -110,9 +111,7 @@ class KeyGenerationOrchestrator:
             )
             
             # Se la rete è in cattivo stato, aumenta i tentativi
-            if (total_nodes < required_count * 2 or
-                not network_health.get("well_distributed", False) or
-                network_health.get("distribution_score", 0.0) < 0.3):
+            if (total_nodes < required_count):
                 
                 max_retries = max(max_retries + 1, 3)
                 logger.info(
@@ -128,108 +127,108 @@ class KeyGenerationOrchestrator:
                 error=str(e)
             )
         
-        # NUOVO: Ciclo di retry con strategie diverse
-        last_exception = None
-        available_node_ids = []
+        # # NUOVO: Ciclo di retry con strategie diverse
+        # last_exception = None
+        # available_node_ids = []
         
-        for attempt in range(max_retries + 1):  # +1 per il tentativo iniziale
-            try:
-                logger.info(
-                    "discovery_attempt",
-                    process_id=self.process_id,
-                    attempt=attempt + 1,
-                    max_attempts=max_retries + 1,
-                    required_count=required_count
-                )
+        # for attempt in range(max_retries + 1):  # +1 per il tentativo iniziale
+        #     try:
+        #         logger.info(
+        #             "discovery_attempt",
+        #             process_id=self.process_id,
+        #             attempt=attempt + 1,
+        #             max_attempts=max_retries + 1,
+        #             required_count=required_count
+        #         )
                 
-                # Usa SmartDiscoveryStrategy con parametri adattivi
-                available_node_ids = await self.smart_discovery.discover_nodes(
-                    required_count=required_count,
-                    required_capabilities=required_capabilities,
-                    prefer_distributed=True,  # Importante per CQKD!
-                    max_discovery_time=60 + (attempt * 30)  # Aumenta timeout per ogni retry
-                )
+        #         # Usa SmartDiscoveryStrategy con parametri adattivi
+        #         available_node_ids = await self.smart_discovery.discover_nodes(
+        #             required_count=required_count,
+        #             required_capabilities=required_capabilities,
+        #             prefer_distributed=True,  # Importante per CQKD!
+        #             max_discovery_time=60 + (attempt * 30)  # Aumenta timeout per ogni retry
+        #         )
                 
-                # Se abbiamo trovato abbastanza nodi, esci dal ciclo
-                if len(available_node_ids) >= required_count:
-                    logger.info(
-                        "discovery_successful",
-                        process_id=self.process_id,
-                        attempt=attempt + 1,
-                        found_count=len(available_node_ids),
-                        required_count=required_count
-                    )
-                    break
+        #         # Se abbiamo trovato abbastanza nodi, esci dal ciclo
+        #         if len(available_node_ids) >= required_count:
+        #             logger.info(
+        #                 "discovery_successful",
+        #                 process_id=self.process_id,
+        #                 attempt=attempt + 1,
+        #                 found_count=len(available_node_ids),
+        #                 required_count=required_count
+        #             )
+        #             break
                     
-            except Exception as e:
-                last_exception = e
-                logger.warning(
-                    "discovery_attempt_failed",
-                    process_id=self.process_id,
-                    attempt=attempt + 1,
-                    error=str(e),
-                    will_retry=(attempt < max_retries)
-                )
+        #     except Exception as e:
+        #         last_exception = e
+        #         logger.warning(
+        #             "discovery_attempt_failed",
+        #             process_id=self.process_id,
+        #             attempt=attempt + 1,
+        #             error=str(e),
+        #             will_retry=(attempt < max_retries)
+        #         )
                 
-                # Se non è l'ultimo tentativo, aspetta un po' prima di riprovare
-                if attempt < max_retries:
-                    # Refresh della routing table tra i tentativi
-                    try:
-                        logger.info(
-                            "refreshing_routing_table_between_attempts",
-                            process_id=self.process_id,
-                            attempt=attempt + 1
-                        )
-                        self.coordinator.server.refresh_table()
-                        await asyncio.sleep(2.0)  # Dai tempo al refresh
-                    except Exception as refresh_e:
-                        logger.warning(
-                            "routing_table_refresh_failed",
-                            process_id=self.process_id,
-                            error=str(refresh_e)
-                        )
+        #         # Se non è l'ultimo tentativo, aspetta un po' prima di riprovare
+        #         if attempt < max_retries:
+        #             # Refresh della routing table tra i tentativi
+        #             try:
+        #                 logger.info(
+        #                     "refreshing_routing_table_between_attempts",
+        #                     process_id=self.process_id,
+        #                     attempt=attempt + 1
+        #                 )
+        #                 self.coordinator.server.refresh_table()
+        #                 await asyncio.sleep(2.0)  # Dai tempo al refresh
+        #             except Exception as refresh_e:
+        #                 logger.warning(
+        #                     "routing_table_refresh_failed",
+        #                     process_id=self.process_id,
+        #                     error=str(refresh_e)
+        #                 )
                     
-                    # Aspetta prima del prossimo tentativo
-                    await asyncio.sleep(3.0 + (attempt * 2))  # Backoff esponenziale
+        #             # Aspetta prima del prossimo tentativo
+        #             await asyncio.sleep(3.0 + (attempt * 2))  # Backoff esponenziale
         
-        # Verifica finale dopo tutti i tentativi
-        if len(available_node_ids) < required_count:
-            error_msg = (
-                f"Nodi insufficienti dopo {max_retries + 1} tentativi: "
-                f"trovati {len(available_node_ids)}, richiesti {required_count}"
-            )
+        # # Verifica finale dopo tutti i tentativi
+        # if len(available_node_ids) < required_count:
+        #     error_msg = (
+        #         f"Nodi insufficienti dopo {max_retries + 1} tentativi: "
+        #         f"trovati {len(available_node_ids)}, richiesti {required_count}"
+        #     )
             
-            logger.error(
-                "discovery_failed_after_all_retries",
-                process_id=self.process_id,
-                found=len(available_node_ids),
-                required=required_count,
-                max_attempts=max_retries + 1,
-                last_error=str(last_exception) if last_exception else None
-            )
+        #     logger.error(
+        #         "discovery_failed_after_all_retries",
+        #         process_id=self.process_id,
+        #         found=len(available_node_ids),
+        #         required=required_count,
+        #         max_attempts=max_retries + 1,
+        #         last_error=str(last_exception) if last_exception else None
+        #     )
             
-            # Aggiungi informazioni diagnostiche
-            try:
-                final_routing_info = self.coordinator.get_routing_table_info()
-                logger.error(
-                    "final_network_state",
-                    process_id=self.process_id,
-                    routing_info=final_routing_info
-                )
-            except Exception as diag_e:
-                logger.error("failed_to_get_final_network_state", error=str(diag_e))
+        #     # Aggiungi informazioni diagnostiche
+        #     try:
+        #         final_routing_info = self.coordinator.get_routing_table_info()
+        #         logger.error(
+        #             "final_network_state",
+        #             process_id=self.process_id,
+        #             routing_info=final_routing_info
+        #         )
+        #     except Exception as diag_e:
+        #         logger.error("failed_to_get_final_network_state", error=str(diag_e))
             
-            raise ValueError(error_msg)
+        #     raise ValueError(error_msg)
         
-        logger.info(
-            "nodes_discovered_smart_with_retry",
-            process_id=self.process_id,
-            found_count=len(available_node_ids),
-            required_count=required_count,
-            attempts_used=min(max_retries + 1, 4)  # Corretto: max 4 tentativi
-        )
+        # logger.info(
+        #     "nodes_discovered_smart_with_retry",
+        #     process_id=self.process_id,
+        #     found_count=len(available_node_ids),
+        #     required_count=required_count,
+        #     attempts_used=min(max_retries + 1, 4)  # Corretto: max 4 tentativi
+        # )
         
-        return available_node_ids
+        return all_node_id
     
     async def _ensure_background_tasks_started(self):
         """

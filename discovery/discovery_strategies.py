@@ -107,9 +107,7 @@ class SmartDiscoveryStrategy:
             )
             
             # Se la rete è in cattivo stato, aumenta il timeout
-            if (total_nodes < required_count * 2 or
-                not network_health.get("well_distributed", False) or
-                network_health.get("distribution_score", 0.0) < 0.3):
+            if (total_nodes < required_count):
                 
                 # Estendi il timeout per reti in cattivo stato
                 additional_time = min(60, max_discovery_time // 2)
