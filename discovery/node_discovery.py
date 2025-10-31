@@ -118,35 +118,165 @@ class NodeDiscoveryService:
         target_id: Optional[str] = None
     ) -> List[NodeInfo]:
         """
-        Versione semplificata: usa SOLO nodi dal routing table locale
-        senza fare query RPC (che causano errori di serializzazione)
+        Implementazione corretta di iterativeFindNode usando la libreria Kademlia
+        
+        Usa NodeSpiderCrawl per eseguire una vera ricerca iterativa nella rete,
+        non solo nella routing table locale.
+        """
+        from kademlia.crawling import NodeSpiderCrawl
+        from kademlia.node import Node
+        import binascii
+        
+        if target_id is None:
+            target_id = self._generate_random_node_id()
+        
+        logger.info(
+            "iterative_find_node_start",
+            target_count=target_count,
+            target_id=target_id[:16] + "..."
+        )
+        
+        try:
+            # Converti target_id in oggetto Node Kademlia
+            target_bytes = binascii.unhexlify(target_id)
+            target_node = Node(target_bytes)
+            
+            # Ottieni nodi iniziali dalla routing table locale
+            initial_peers = self._get_initial_kademlia_nodes()
+            
+            if not initial_peers:
+                logger.warning("no_initial_peers_for_crawl")
+                return []
+            
+            logger.debug(
+                "starting_node_spider_crawl",
+                initial_peers=len(initial_peers),
+                ksize=self.K,
+                alpha=self.ALPHA
+            )
+            
+            # Crea e esegui NodeSpiderCrawl
+            spider = NodeSpiderCrawl(
+                protocol=self.coordinator.server.protocol,
+                node=target_node,
+                peers=initial_peers,
+                ksize=self.K,
+                alpha=self.ALPHA
+            )
+            
+            # Esegui la ricerca iterativa
+            found_nodes = await spider.find()
+            
+            logger.info(
+                "node_spider_crawl_completed",
+                found_nodes=len(found_nodes),
+                target_count=target_count
+            )
+            
+            # Converti oggetti Node Kademlia in NodeInfo
+            discovered_nodes = []
+            for node in found_nodes[:target_count]:
+                node_info = NodeInfo(
+                    node_id=node.id.hex() if isinstance(node.id, bytes) else str(node.id),
+                    address=node.ip,
+                    port=node.port,
+                    state=NodeState.ACTIVE,
+                    current_role=None,
+                    last_seen=datetime.now(),
+                    capabilities=[
+                        NodeRole.QSG, NodeRole.BG, NodeRole.QPP,
+                        NodeRole.QPM, NodeRole.QPC
+                    ]
+                )
+                discovered_nodes.append(node_info)
+            
+            return discovered_nodes
+            
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(
+                "iterative_find_node_failed",
+                error=error_msg,
+                target_id=target_id[:16] + "..." if target_id else None
+            )
+            
+            # Check if it's a DNS/socket family issue
+            if "socket family mismatch" in error_msg or "DNS lookup is required" in error_msg:
+                logger.warning(
+                    "dns_socket_issue_detected",
+                    error=error_msg,
+                    action="refreshing_routing_table_and_fallback"
+                )
+                # Try to refresh routing table to clear problematic entries
+                try:
+                    self.coordinator.server.refresh_table()
+                    logger.info("routing_table_refreshed_after_dns_issue")
+                except Exception as refresh_e:
+                    logger.warning(
+                        "routing_table_refresh_failed",
+                        error=str(refresh_e)
+                    )
+            
+            # Fallback: usa solo routing table locale
+            logger.info("fallback_to_local_routing_table")
+            return await self._fallback_local_search(target_count, target_id)
+
+    def _get_initial_kademlia_nodes(self) -> List:
+        """
+        Ottieni nodi iniziali come oggetti Node Kademlia dalla routing table
+        """
+        try:
+            from kademlia.node import Node
+            
+            router = self.coordinator.server.protocol.router
+            local_node = self.coordinator.server.node
+            
+            # Trova nodi vicini usando il router
+            neighbors = router.find_neighbors(local_node, k=self.K)
+            
+            logger.debug(
+                "kademlia_initial_nodes_retrieved",
+                count=len(neighbors)
+            )
+            
+            return neighbors
+            
+        except Exception as e:
+            logger.error(
+                "failed_to_get_kademlia_nodes",
+                error=str(e)
+            )
+            return []
+    
+    async def _fallback_local_search(
+        self,
+        target_count: int,
+        target_id: Optional[str] = None
+    ) -> List[NodeInfo]:
+        """
+        Fallback: usa solo routing table locale se la ricerca iterativa fallisce
         """
         if target_id is None:
             target_id = self._generate_random_node_id()
         
-        logger.debug(
-            "iterative_find_node_start_local_only",
-            target_count=target_count
+        logger.warning(
+            "fallback_local_search",
+            target_count=target_count,
+            reason="iterative_search_failed"
         )
         
-        # Ottieni TUTTI i nodi dal routing table locale
+        # Ottieni tutti i nodi dalla routing table locale
         all_local_nodes = await self._get_all_nodes_from_routing_table()
         
         if not all_local_nodes:
-            logger.warning("no_nodes_in_routing_table")
+            logger.warning("no_nodes_in_routing_table_fallback")
             return []
         
-        logger.info(
-            "using_local_routing_table_nodes",
-            total_found=len(all_local_nodes),
-            target=target_count
-        )
-        
-        # Ordina per distanza XOR (opzionale)
+        # Ordina per distanza XOR
         closest_nodes = self._get_k_closest_nodes(
             all_local_nodes,
             target_id,
-            min(target_count * 2, len(all_local_nodes))
+            min(target_count, len(all_local_nodes))
         )
         
         return closest_nodes

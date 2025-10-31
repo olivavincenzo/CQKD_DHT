@@ -52,6 +52,43 @@ class CQKDNode:
         """Genera un ID univoco per il nodo"""
         return f"node_{secrets.token_hex(20)}"
     
+    async def _resolve_bootstrap_nodes(self, bootstrap_nodes: List[tuple]) -> List[tuple]:
+        """
+        Risolve hostnames in indirizzi IP per evitare socket family mismatch
+        
+        Args:
+            bootstrap_nodes: Lista di (hostname, port) tuples
+            
+        Returns:
+            List[tuple]: Lista di (ip_address, port) tuples
+        """
+        import socket
+        
+        resolved_nodes = []
+        for host, port in bootstrap_nodes:
+            try:
+                # Try to resolve hostname to IP address
+                ip_address = socket.gethostbyname(host)
+                resolved_nodes.append((ip_address, port))
+                logger.info(
+                    "bootstrap_node_resolved",
+                    node_id=self.node_id,
+                    original=f"{host}:{port}",
+                    resolved=f"{ip_address}:{port}"
+                )
+            except socket.gaierror as e:
+                logger.error(
+                    "bootstrap_resolution_failed",
+                    node_id=self.node_id,
+                    host=host,
+                    port=port,
+                    error=str(e)
+                )
+                # If resolution fails, keep original (might be already an IP)
+                resolved_nodes.append((host, port))
+        
+        return resolved_nodes
+    
     async def start(self):
         """Avvia il nodo DHT"""
         try:
@@ -75,7 +112,11 @@ class CQKDNode:
         try:
             print(f"[{self.node_id}] Inizio bootstrap verso {bootstrap_nodes}...")
             
-            await self.server.bootstrap(bootstrap_nodes)
+            # Resolve hostnames to IP addresses to avoid socket family mismatch issues
+            resolved_nodes = await self._resolve_bootstrap_nodes(bootstrap_nodes)
+            print(f"[{self.node_id}] Nodi risolti: {resolved_nodes}")
+            
+            await self.server.bootstrap(resolved_nodes)
             
             # Aspetta che il routing table sia popolato
             max_attempts = 120  # 60 secondi totali per reti molto grandi
