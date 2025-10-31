@@ -32,9 +32,27 @@ async def main():
     try:
         await worker_node.start()
         logger.info(f"✓ Worker node '{node_id}' avviato. Tentativo di bootstrap verso {bootstrap_nodes}...")
-        
+
+        # Aggiungi delay casuale per evitare collisioni
+        import random
+        await asyncio.sleep(random.uniform(0.5, 2.0))
+
         await worker_node.bootstrap(bootstrap_nodes)
-        logger.info(f"✓ Worker node '{node_id}' connesso alla rete DHT.")
+
+        # Verifica che abbiamo nodi nella routing table
+        routing_info = worker_node.get_routing_table_info()
+        if routing_info.get('total_nodes', 0) == 0:
+            logger.warning(f"⚠ Worker '{node_id}': routing table vuota dopo bootstrap, attendo 10s...")
+            await asyncio.sleep(10)  # Dai tempo alla rete di stabilizzarsi
+
+            # Riprova il bootstrap
+            await worker_node.bootstrap(bootstrap_nodes)
+            routing_info = worker_node.get_routing_table_info()
+
+        if routing_info.get('total_nodes', 0) > 0:
+            logger.info(f"✓ Worker node '{node_id}' connesso alla rete DHT con {routing_info['total_nodes']} nodi.")
+        else:
+            logger.warning(f"⚠ Worker node '{node_id}' connesso ma routing table vuota.")
 
         # Mantieni il nodo in esecuzione
         await asyncio.Event().wait()

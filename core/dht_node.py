@@ -28,7 +28,8 @@ class CQKDNode:
     ):
         self.port = port
         self.node_id = node_id or self._generate_node_id()
-        self.server = Server(ksize=100)
+        # Configurazione ottimizzata per alte scalabilità
+        self.server = Server(ksize=settings.dht_ksize)  # Usa configurazione da settings
         self.state = NodeState.OFF
         self.current_role: Optional[NodeRoleAssignment] = None
         self.capabilities = capabilities or [
@@ -77,7 +78,7 @@ class CQKDNode:
             await self.server.bootstrap(bootstrap_nodes)
             
             # Aspetta che il routing table sia popolato
-            max_attempts = 20  # 10 secondi totali
+            max_attempts = 120  # 60 secondi totali per reti molto grandi
             for attempt in range(max_attempts):
                 # Controlla se ci sono nodi nel routing table
                 router = self.server.protocol.router
@@ -115,8 +116,8 @@ class CQKDNode:
                     )
                     return
                 
-                # Aspetta un po' prima di riprovare
-                await asyncio.sleep(0.5)
+                # Aspetta un po' prima di riprovare (aumento per reti grandi)
+                await asyncio.sleep(1.0)  # 1 secondo per dare tempo alla rete
             
             # Timeout raggiunto senza nodi
             print(f"⚠ [{self.node_id}] Bootstrap timeout: routing table ancora vuota dopo {max_attempts} tentativi")
@@ -204,6 +205,34 @@ class CQKDNode:
         try:
             await self.server.set(key, value)
             logger.debug("data_stored", node_id=self.node_id, key=key)
+        except ValueError as e:
+            if "socket family mismatch" in str(e) or "DNS lookup is required" in str(e):
+                # Problema di hostname vs IP - rigenera la routing table con IP
+                logger.warning("dns_hostname_issue_detected", node_id=self.node_id, issue=str(e))
+                # Force refresh routing table se possibile
+                try:
+                    # Refresh router per forzare risoluzione IP
+                    if hasattr(self.server.protocol, 'router'):
+                        self.server.protocol.router.refresh_table()
+                    # Riprova lo store
+                    await self.server.set(key, value)
+                    logger.info("data_stored_after_refresh", node_id=self.node_id, key=key)
+                except Exception as retry_e:
+                    logger.error(
+                        "data_store_failed_after_retry",
+                        node_id=self.node_id,
+                        key=key,
+                        error=str(retry_e)
+                    )
+                    raise
+            else:
+                logger.error(
+                    "data_store_failed",
+                    node_id=self.node_id,
+                    key=key,
+                    error=str(e)
+                )
+                raise
         except Exception as e:
             logger.error(
                 "data_store_failed",
@@ -244,32 +273,46 @@ class CQKDNode:
     def get_routing_table_info(self) -> Dict[str, Any]:
         """
         Ottieni informazioni dettagliate sulla routing table
-        
+
         Returns:
             Dict con statistiche e dettagli nodi
         """
         try:
             router = self.server.protocol.router
-            
+
             info = {
                 "total_nodes": 0,
                 "active_buckets": 0,
+                "total_buckets": len(router.buckets),
+                "bucket_capacity": self.server.ksize,
                 "buckets_detail": [],
-                "all_nodes": []
+                "all_nodes": [],
+                "bucket_distribution": {},  # Nuovo: distribuzione nodi per bucket
+                "network_health": {
+                    "well_distributed": False,
+                    "single_bucket_overload": False,
+                    "distribution_score": 0.0
+                }
             }
-            
+
+            nodes_per_bucket = []
+
             for i, bucket in enumerate(router.buckets):
                 nodes = bucket.get_nodes()
-                if len(nodes) > 0:
+                nodes_count = len(nodes)
+
+                if nodes_count > 0:
                     info["active_buckets"] += 1
-                    info["total_nodes"] += len(nodes)
-                    
+                    info["total_nodes"] += nodes_count
+                    nodes_per_bucket.append(nodes_count)
+
                     bucket_info = {
                         "bucket_index": i,
-                        "node_count": len(nodes),
+                        "node_count": nodes_count,
+                        "capacity_usage": nodes_count / self.server.ksize,
                         "nodes": []
                     }
-                    
+
                     for node in nodes:
                         node_data = {
                             "id": node.id.hex()[:16] + "...",
@@ -277,9 +320,30 @@ class CQKDNode:
                         }
                         bucket_info["nodes"].append(node_data)
                         info["all_nodes"].append(node_data)
-                    
+
                     info["buckets_detail"].append(bucket_info)
-            
+                    info["bucket_distribution"][i] = nodes_count
+
+            # Calcola metriche di salute della rete
+            if nodes_per_bucket:
+                max_nodes = max(nodes_per_bucket)
+                avg_nodes = sum(nodes_per_bucket) / len(nodes_per_bucket)
+
+                # Bucket overload detection
+                info["network_health"]["single_bucket_overload"] = max_nodes > self.server.ksize * 0.8
+
+                # Distribution score (0-1, 1 = perfetto)
+                if max_nodes > 0:
+                    variance = sum((x - avg_nodes) ** 2 for x in nodes_per_bucket) / len(nodes_per_bucket)
+                    info["network_health"]["distribution_score"] = max(0, 1 - (variance / (max_nodes ** 2)))
+
+                # Well distributed se abbiamo bucket in più intervalli e nessuno sovraccarico
+                info["network_health"]["well_distributed"] = (
+                    len(nodes_per_bucket) >= 3 and  # Almeno 3 bucket attivi
+                    not info["network_health"]["single_bucket_overload"] and
+                    info["network_health"]["distribution_score"] > 0.5
+                )
+
             return info
         except Exception as e:
             logger.error("failed_to_get_routing_table_info", error=str(e))

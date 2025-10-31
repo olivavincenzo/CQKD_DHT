@@ -6,8 +6,10 @@ WORKDIR /app
 # Copia solo i requirements per sfruttare la cache di Docker
 COPY requirements.txt .
 
-# Installa le dipendenze in una directory locale del builder
-RUN pip install --no-cache-dir --prefix="/install" -r requirements.txt
+# Pulizia cache pip e installazione dipendenze
+RUN pip cache purge && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --prefix="/install" -r requirements.txt
 
 
 # --- Stage finale ---

@@ -1,6 +1,6 @@
 import asyncio
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from core.dht_node import CQKDNode
 from core.node_states import NodeRole, NodeInfo
@@ -58,7 +58,8 @@ class SmartDiscoveryStrategy:
         self,
         required_count: int,
         required_capabilities: Optional[List[NodeRole]] = None,
-        prefer_distributed: bool = True
+        prefer_distributed: bool = True,
+        max_discovery_time: int = 60  # Timeout per reti grandi
     ) -> List[str]:
         """
         Scopre nodi con strategia ottimizzata
@@ -78,6 +79,7 @@ class SmartDiscoveryStrategy:
         """
         start_time = datetime.now()
         discovered_node_ids = []
+        discovery_deadline = start_time + timedelta(seconds=max_discovery_time)
         
         logger.info(
             "smart_discovery_start",
@@ -101,13 +103,20 @@ class SmartDiscoveryStrategy:
                 required=required_count
             )
         
-        # Step 2: Se ancora servono nodi, usa discovery standard
+        # Step 2: Se ancora servono nodi, usa discovery standard con timeout
         remaining = required_count - len(discovered_node_ids)
-        if remaining > 0:
-            discovery_result = await self.discovery.discover_nodes_for_roles(
-                required_count=remaining,
-                required_capabilities=required_capabilities
-            )
+        if remaining > 0 and datetime.now() < discovery_deadline:
+            try:
+                discovery_result = await asyncio.wait_for(
+                    self.discovery.discover_nodes_for_roles(
+                        required_count=remaining,
+                        required_capabilities=required_capabilities
+                    ),
+                    timeout=(discovery_deadline - datetime.now()).total_seconds()
+                )
+            except asyncio.TimeoutError:
+                logger.warning("discovery_timeout", remaining=remaining)
+                discovery_result = type('DiscoveryResult', (), {'discovered_nodes': []})()
             
             new_nodes = discovery_result.discovered_nodes
             discovered_node_ids.extend([n.node_id for n in new_nodes])
@@ -123,16 +132,24 @@ class SmartDiscoveryStrategy:
                 remaining=remaining
             )
         
-        # Step 3: Se serve distribuzione geografica, usa random walk
+        # Step 3: Se serve distribuzione geografica, usa random walk con timeout
         remaining = required_count - len(discovered_node_ids)
-        if remaining > 0 and prefer_distributed and self.random_walk:
-            # Calcola quanti walk servono
-            walks_needed = max(remaining // 20, 5)  # Almeno 5 walk
-            
-            explored_nodes = await self.random_walk.explore_network(
-                walk_count=walks_needed,
-                k_per_walk=20
-            )
+        if remaining > 0 and prefer_distributed and self.random_walk and datetime.now() < discovery_deadline:
+            # Calcola quanti walk servono (adattivo per reti grandi)
+            walks_needed = max(min(remaining // 20, 20), 5)  # Tra 5 e 20 walk per reti grandi
+            k_per_walk = min(100, max(20, remaining // walks_needed))  # Adattivo per grandi reti
+
+            try:
+                explored_nodes = await asyncio.wait_for(
+                    self.random_walk.explore_network(
+                        walk_count=walks_needed,
+                        k_per_walk=k_per_walk
+                    ),
+                    timeout=(discovery_deadline - datetime.now()).total_seconds()
+                )
+            except asyncio.TimeoutError:
+                logger.warning("random_walk_timeout", remaining=remaining)
+                explored_nodes = []
             
             # Filtra per capacità se richieste
             if required_capabilities:

@@ -50,14 +50,49 @@ async def main():
         
         if bob_key:
             logger.info(f"SUCCESS! Bob ha generato la chiave: {bob_key.hex()}")
+            logger.info(f"✓ Bob rimane attivo per future generazioni di chiavi...")
         else:
             logger.error("✗ Bob non è riuscito a generare la chiave.")
+            logger.info(f"✓ Bob rimane attivo per riprovare...")
+
+        # Mantieni Bob attivo indefinitamente per future generazioni di chiavi
+        logger.info(f"Bob in attesa del prossimo process_id sulla chiave DHT: '{PROCESS_ID_KEY}'...")
+        while True:
+            try:
+                # Reset process_id per permettere nuove generazioni
+                process_id = None
+
+                # Attendi che Alice pubblichi un nuovo process_id
+                while process_id is None:
+                    process_id = await bob_node.retrieve_data(PROCESS_ID_KEY)
+                    if process_id is None:
+                        await asyncio.sleep(2)
+
+                logger.info(f"✓ Bob ha ricevuto nuovo process_id: {process_id}. Avvio ricezione chiave...")
+
+                # Avvia la ricezione della nuova chiave
+                bob_key = await bob_protocol.receive_key(process_id)
+
+                if bob_key:
+                    logger.info(f"SUCCESS! Bob ha generato una nuova chiave: {bob_key.hex()}")
+                else:
+                    logger.error("✗ Bob non è riuscito a generare la nuova chiave.")
+
+                # Breve pausa prima di cercare nuove chiavi
+                await asyncio.sleep(1)
+
+            except Exception as e:
+                logger.error(f"✗ Errore durante generazione chiave: {e}", exc_info=True)
+                await asyncio.sleep(5)  # Pausa più lunga dopo errore
 
     except Exception as e:
         logger.error(f"✗ Errore critico in Bob: {e}", exc_info=True)
-    finally:
-        await bob_node.stop()
-        logger.info("Bob node fermato.")
+        # In caso di errore critico, mantieni comunque il nodo attivo
+        logger.info("Bob rimane attivo nonostante l'errore...")
+        while True:
+            await asyncio.sleep(10)
+
+    # Non fermare mai il nodo Bob (rimuoviamo il finally block)
 
 if __name__ == "__main__":
     asyncio.run(main())

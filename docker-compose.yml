@@ -1,41 +1,84 @@
 version: '3.8'
 
 services:
-  bootstrap:
+  bootstrap-primary:
     build:
       context: .
       dockerfile: Dockerfile
     image: cqkd-dht-node:latest
-    container_name: cqkd-bootstrap
+    container_name: cqkd-bootstrap-primary
     environment:
       - DHT_PORT=5678
+      - NODE_ID=bootstrap-primary
     ports:
       - "5678:5678/udp"
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.bootstrap_node"]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]  # Semplice check
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bootstrap-secondary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:latest
+    container_name: cqkd-bootstrap-secondary
+    environment:
+      - DHT_PORT=5679
+      - NODE_ID=bootstrap-secondary
+      - BOOTSTRAP_NODES=bootstrap-primary:5678
+    ports:
+      - "5679:5679/udp"
+    networks:
+      - cqkd-network
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+    command: ["python", "-m", "scripts.bootstrap_node"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   worker:
     image: cqkd-dht-node:latest
     environment:
       - DHT_PORT=7000
-      - BOOTSTRAP_NODES=bootstrap:5678
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
     depends_on:
-      - bootstrap
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
 
   bob:
     image: cqkd-dht-node:latest
     container_name: cqkd-bob
     environment:
       - DHT_PORT=6001
-      - BOOTSTRAP_NODES=bootstrap:5678
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
     depends_on:
-      - bootstrap
+      - bootstrap-primary
+      - bootstrap-secondary
     networks:
       - cqkd-network
     ports:
@@ -49,11 +92,12 @@ services:
     container_name: cqkd-alice
     environment:
       - DHT_PORT=6000
-      - BOOTSTRAP_NODES=bootstrap:5678
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
       - BOB_DHT_ADDRESS=bob:6001 # Indirizzo di Bob nella rete DHT
     depends_on:
       - bob # Alice deve assicurarsi che Bob sia avviato per potergli parlare via API
-      - worker
+      - bootstrap-primary
+      - bootstrap-secondary
     networks:
       - cqkd-network
     ports:

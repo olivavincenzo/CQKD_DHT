@@ -1,4 +1,13 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+try:
+    # Pydantic v2
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+    PYDANTIC_V2 = True
+except ImportError:
+    # Fallback a pydantic v1
+    from pydantic import BaseSettings
+    SettingsConfigDict = None
+    PYDANTIC_V2 = False
+
 from typing import List, Optional
 import os
 
@@ -6,11 +15,18 @@ import os
 class Settings(BaseSettings):
     """Configurazione globale del sistema CQKD"""
 
-    model_config = SettingsConfigDict(
-        env_file='.env',
-        env_file_encoding='utf-8',
-        case_sensitive=False
-    )
+    if PYDANTIC_V2:
+        model_config = SettingsConfigDict(
+            env_file='.env',
+            env_file_encoding='utf-8',
+            case_sensitive=False
+        )
+    else:
+        # Pydantic v1 compatibility
+        class Config:
+            env_file = '.env'
+            env_file_encoding = 'utf-8'
+            case_sensitive = False
 
     # DHT Configuration
     dht_port: int = 5678
@@ -38,6 +54,13 @@ class Settings(BaseSettings):
     # Performance
     max_retries: int = 3
     request_timeout_seconds: int = 30
+
+    # DHT Scalability
+    dht_ksize: int = 20  # Dimensione bucket Kademlia
+    bootstrap_timeout_seconds: int = 30  # Timeout per bootstrap
+    max_concurrent_discovery: int = 50  # Max discovery paralleli
+    discovery_batch_size: int = 10  # Batch size per discovery
+    max_discovery_time: int = 60  # Timeout discovery per reti grandi
 
     # Monitoring
     enable_prometheus: bool = False
