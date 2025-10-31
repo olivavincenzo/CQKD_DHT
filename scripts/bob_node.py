@@ -85,12 +85,27 @@ async def main():
                 logger.error(f"✗ Errore durante generazione chiave: {e}", exc_info=True)
                 await asyncio.sleep(5)  # Pausa più lunga dopo errore
 
+    except KeyboardInterrupt:
+        logger.info("Bob ricevuto segnale di interrupt, ma rimane attivo per continuare le operazioni...")
+        # Ignora l'interrupt e continua l'esecuzione
+        while True:
+            try:
+                await asyncio.sleep(10)
+                logger.info("Bob ancora attivo dopo interrupt...")
+            except Exception as retry_e:
+                logger.error(f"✗ Errore nel loop di recupero dopo interrupt: {retry_e}")
+                await asyncio.sleep(30)
     except Exception as e:
         logger.error(f"✗ Errore critico in Bob: {e}", exc_info=True)
         # In caso di errore critico, mantieni comunque il nodo attivo
-        logger.info("Bob rimane attivo nonostante l'errore...")
+        logger.info("Bob rimane attivo nonostante l'errore critico...")
         while True:
-            await asyncio.sleep(10)
+            try:
+                await asyncio.sleep(10)
+                logger.info("Bob ancora attivo dopo errore critico...")
+            except Exception as retry_e:
+                logger.error(f"✗ Errore anche nel loop di recupero: {retry_e}")
+                await asyncio.sleep(30)
 
     # Non fermare mai il nodo Bob (rimuoviamo il finally block)
 

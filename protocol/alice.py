@@ -51,16 +51,19 @@ class Alice:
         requirements = self.orchestrator.calculate_required_nodes(desired_length_bits)
         lk = requirements['initial_key_length']
         lc = desired_length_bits
+        alpha = lk*lc
         
-        logger.info("step_1_complete", lc=lc, lk=lk, alpha=requirements['total'])
+        logger.info("step_1_complete", lc=lc, lk=lk, alpha=alpha)
         
         # ========== STEP 2-3: Alice ping nodi e verifica #(n) >= 5lk ==========
         if available_nodes is None:
             available_nodes = await self.orchestrator.discover_available_nodes(
-                required_count=requirements['total']
+                required_count=alpha,
+                required_capabilities=None,  # Tutte le capacità per massima flessibilità
+                max_retries=3  # NUOVO: Aumenta retry per discovery robusto
             )
         
-        if len(available_nodes) < requirements['total']:
+        if len(available_nodes) < alpha:
             raise ValueError(
                 f"Nodi insufficienti: richiesti {requirements['total']}, "
                 f"disponibili {len(available_nodes)}"
@@ -373,9 +376,19 @@ async def lifespan(app: FastAPI):
     logger.info(f"✓ Alice node '{node_id}' connessa alla rete DHT.")
     
 
-    yield
-    if alice_node:
-        await alice_node.stop()
+    try:
+        yield
+    except Exception as e:
+        logger.error(f"✗ Errore nel servizio Alice durante l'esecuzione: {e}", exc_info=True)
+        logger.info("Alice rimane attiva nonostante l'errore...")
+        # Non fermare il servizio anche in caso di errore
+        yield
+    finally:
+        # NOTA: Non fermiamo alice_node per mantenere il container in esecuzione
+        logger.info("Alice lifespan completato, ma il nodo rimane attivo per operazioni continue...")
+        if alice_node:
+            logger.info("Alice node mantenuto attivo per operazioni continue...")
+            # await alice_node.stop()  # Commentato per mantenere il nodo attivo
 
 app = FastAPI(title="Alice Controller Service", version="1.0.0", lifespan=lifespan)
 

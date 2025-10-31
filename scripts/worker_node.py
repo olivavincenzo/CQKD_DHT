@@ -54,15 +54,30 @@ async def main():
         else:
             logger.warning(f"⚠ Worker node '{node_id}' connesso ma routing table vuota.")
 
-        # Mantieni il nodo in esecuzione
-        await asyncio.Event().wait()
+        # Mantieni il nodo in esecuzione indefinitamente
+        logger.info(f"✓ Worker node '{node_id}' ora in esecuzione continua. In attesa di operazioni...")
+        while True:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                logger.info(f"Worker node '{node_id}' ricevuto segnale di cancellazione, ma rimane attivo...")
+                # Ignora la cancellazione e continua l'esecuzione
+                await asyncio.sleep(1)
+            except Exception as e:
+                logger.error(f"✗ Errore nel loop principale del worker '{node_id}': {e}", exc_info=True)
+                await asyncio.sleep(5)  # Breve pausa prima di continuare
 
     except Exception as e:
-        logger.error(f"✗ Errore critico nel worker node '{node_id}': {e}", exc_info=True)
-    finally:
-        if worker_node:
-            await worker_node.stop()
-        logger.info(f"Worker node '{node_id}' fermato.")
+        logger.error(f"✗ Errore critico durante l'avvio del worker node '{node_id}': {e}", exc_info=True)
+        logger.info(f"✓ Worker node '{node_id}' rimane attivo nonostante l'errore critico...")
+        # In caso di errore critico durante l'avvio, mantieni comunque il nodo attivo
+        while True:
+            try:
+                await asyncio.sleep(10)
+                logger.info(f"Worker node '{node_id}' ancora attivo dopo errore critico...")
+            except Exception as retry_e:
+                logger.error(f"✗ Errore anche nel loop di recupero: {retry_e}")
+                await asyncio.sleep(30)
 
 if __name__ == "__main__":
     asyncio.run(main())

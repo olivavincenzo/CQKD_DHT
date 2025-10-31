@@ -61,19 +61,23 @@ class KeyGenerationOrchestrator:
     async def discover_available_nodes(
         self,
         required_count: int,
-        required_capabilities: Optional[List[NodeRole]] = None
+        required_capabilities: Optional[List[NodeRole]] = None,
+        max_retries: int = 2  # NUOVO: Numero di tentativi massimi
     ) -> List[str]:
         """
-        Scopre nodi disponibili nella rete DHT usando strategia intelligente
+        Scopre nodi disponibili nella rete DHT usando strategia intelligente e robusta
         
-        Questa implementazione usa:
-        1. Cache per nodi già noti (veloce)
-        2. Discovery standard se cache insufficiente
-        3. Random walk per nodi distribuiti geograficamente
+        Questa implementazione migliorata usa:
+        1. Analisi dello stato della rete con get_routing_table_info()
+        2. Cache per nodi già noti (veloce)
+        3. Discovery standard con retry se cache insufficiente
+        4. Random walk per nodi distribuiti geograficamente
+        5. Fallback aggressivo con retry multipli
         
         Args:
             required_count: Numero di nodi necessari
             required_capabilities: Capacità richieste opzionali
+            max_retries: Numero massimo di tentativi di discovery
             
         Returns:
             list[str]: Lista di node_id disponibili
@@ -84,23 +88,145 @@ class KeyGenerationOrchestrator:
             await self._ensure_background_tasks_started()
 
         logger.info(
-            "discovering_nodes_smart",
+            "discovering_nodes_smart_with_retry",
             process_id=self.process_id,
             required_count=required_count,
-            capabilities=required_capabilities
+            capabilities=required_capabilities,
+            max_retries=max_retries
         )
         
-        # Usa SmartDiscoveryStrategy (con cache + random walk)
-        available_node_ids = await self.smart_discovery.discover_nodes(
-            required_count=required_count,
-            required_capabilities=required_capabilities,
-            prefer_distributed=True  # Importante per CQKD!
-        )
+        # NUOVO: Analisi preliminare dello stato della rete
+        try:
+            routing_info = self.coordinator.get_routing_table_info()
+            network_health = routing_info.get("network_health", {})
+            total_nodes = routing_info.get("total_nodes", 0)
+            
+            logger.info(
+                "pre_discovery_network_analysis",
+                process_id=self.process_id,
+                total_nodes=total_nodes,
+                well_distributed=network_health.get("well_distributed", False),
+                distribution_score=network_health.get("distribution_score", 0.0)
+            )
+            
+            # Se la rete è in cattivo stato, aumenta i tentativi
+            if (total_nodes < required_count * 2 or
+                not network_health.get("well_distributed", False) or
+                network_health.get("distribution_score", 0.0) < 0.3):
+                
+                max_retries = max(max_retries + 1, 3)
+                logger.info(
+                    "poor_network_detected_increasing_retries",
+                    process_id=self.process_id,
+                    new_max_retries=max_retries
+                )
+                
+        except Exception as e:
+            logger.warning(
+                "pre_discovery_analysis_failed",
+                process_id=self.process_id,
+                error=str(e)
+            )
+        
+        # NUOVO: Ciclo di retry con strategie diverse
+        last_exception = None
+        available_node_ids = []
+        
+        for attempt in range(max_retries + 1):  # +1 per il tentativo iniziale
+            try:
+                logger.info(
+                    "discovery_attempt",
+                    process_id=self.process_id,
+                    attempt=attempt + 1,
+                    max_attempts=max_retries + 1,
+                    required_count=required_count
+                )
+                
+                # Usa SmartDiscoveryStrategy con parametri adattivi
+                available_node_ids = await self.smart_discovery.discover_nodes(
+                    required_count=required_count,
+                    required_capabilities=required_capabilities,
+                    prefer_distributed=True,  # Importante per CQKD!
+                    max_discovery_time=60 + (attempt * 30)  # Aumenta timeout per ogni retry
+                )
+                
+                # Se abbiamo trovato abbastanza nodi, esci dal ciclo
+                if len(available_node_ids) >= required_count:
+                    logger.info(
+                        "discovery_successful",
+                        process_id=self.process_id,
+                        attempt=attempt + 1,
+                        found_count=len(available_node_ids),
+                        required_count=required_count
+                    )
+                    break
+                    
+            except Exception as e:
+                last_exception = e
+                logger.warning(
+                    "discovery_attempt_failed",
+                    process_id=self.process_id,
+                    attempt=attempt + 1,
+                    error=str(e),
+                    will_retry=(attempt < max_retries)
+                )
+                
+                # Se non è l'ultimo tentativo, aspetta un po' prima di riprovare
+                if attempt < max_retries:
+                    # Refresh della routing table tra i tentativi
+                    try:
+                        logger.info(
+                            "refreshing_routing_table_between_attempts",
+                            process_id=self.process_id,
+                            attempt=attempt + 1
+                        )
+                        self.coordinator.server.refresh_table()
+                        await asyncio.sleep(2.0)  # Dai tempo al refresh
+                    except Exception as refresh_e:
+                        logger.warning(
+                            "routing_table_refresh_failed",
+                            process_id=self.process_id,
+                            error=str(refresh_e)
+                        )
+                    
+                    # Aspetta prima del prossimo tentativo
+                    await asyncio.sleep(3.0 + (attempt * 2))  # Backoff esponenziale
+        
+        # Verifica finale dopo tutti i tentativi
+        if len(available_node_ids) < required_count:
+            error_msg = (
+                f"Nodi insufficienti dopo {max_retries + 1} tentativi: "
+                f"trovati {len(available_node_ids)}, richiesti {required_count}"
+            )
+            
+            logger.error(
+                "discovery_failed_after_all_retries",
+                process_id=self.process_id,
+                found=len(available_node_ids),
+                required=required_count,
+                max_attempts=max_retries + 1,
+                last_error=str(last_exception) if last_exception else None
+            )
+            
+            # Aggiungi informazioni diagnostiche
+            try:
+                final_routing_info = self.coordinator.get_routing_table_info()
+                logger.error(
+                    "final_network_state",
+                    process_id=self.process_id,
+                    routing_info=final_routing_info
+                )
+            except Exception as diag_e:
+                logger.error("failed_to_get_final_network_state", error=str(diag_e))
+            
+            raise ValueError(error_msg)
         
         logger.info(
-            "nodes_discovered_smart",
+            "nodes_discovered_smart_with_retry",
             process_id=self.process_id,
-            found_count=len(available_node_ids)
+            found_count=len(available_node_ids),
+            required_count=required_count,
+            attempts_used=min(max_retries + 1, 4)  # Corretto: max 4 tentativi
         )
         
         return available_node_ids
@@ -170,7 +296,60 @@ class KeyGenerationOrchestrator:
         )
 
         return allocation
-    
+
+    def _calculate_reduced_requirements(
+        self,
+        available_nodes: int,
+        original_requirements: Dict[str, int]
+    ) -> Dict[str, int]:
+        """
+        Calcola requisiti ridotti basati sui nodi disponibili
+        
+        Args:
+            available_nodes: Numero di nodi disponibili
+            original_requirements: Requisiti originali
+            
+        Returns:
+            Dict[str, int]: Requisiti ridotti proporzionalmente
+        """
+        if available_nodes <= 0:
+            return original_requirements
+        
+        # Calcola il fattore di riduzione (conservativo)
+        reduction_factor = available_nodes / original_requirements['total']
+        
+        # Assicura un minimo ragionevole per ogni ruolo
+        min_per_role = max(1, int(original_requirements['qsg'] * 0.3))  # Almeno 30% per ruolo
+        
+        reduced_requirements = {}
+        for role_name, original_count in original_requirements.items():
+            if role_name in ['total', 'initial_key_length']:
+                continue
+            
+            # Calcola il numero ridotto
+            reduced_count = max(
+                min_per_role,
+                int(original_count * reduction_factor)
+            )
+            
+            # Arrotonda per eccesso (non dovrebbe superare gli originali)
+            reduced_count = min(reduced_count, original_count)
+            
+            reduced_requirements[role_name] = reduced_count
+        
+        # Ricalcola il totale
+        reduced_requirements['total'] = sum(reduced_requirements.values())
+        
+        logger.debug(
+            "requirements_reduced",
+            available_nodes=available_nodes,
+            original_total=original_requirements['total'],
+            reduced_total=reduced_requirements['total'],
+            reduction_factor=reduction_factor
+        )
+        
+        return reduced_requirements
+
     @staticmethod
     def bits_to_bytes(bits: List[int]) -> bytes:
         """

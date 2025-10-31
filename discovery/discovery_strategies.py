@@ -59,20 +59,23 @@ class SmartDiscoveryStrategy:
         required_count: int,
         required_capabilities: Optional[List[NodeRole]] = None,
         prefer_distributed: bool = True,
-        max_discovery_time: int = 60  # Timeout per reti grandi
+        max_discovery_time: int = 90  # Aumentato timeout per reti grandi
     ) -> List[str]:
         """
-        Scopre nodi con strategia ottimizzata
+        Scopre nodi con strategia ottimizzata e robusta
         
-        Processo:
-        1. Controlla cache per nodi già noti
-        2. Se insufficienti, esegui discovery standard
-        3. Se serve diversificazione, usa random walk
+        Processo migliorato:
+        1. Analizza stato della rete con get_routing_table_info()
+        2. Controlla cache per nodi già noti
+        3. Se insufficienti, esegui discovery standard con retry
+        4. Se serve diversificazione, usa random walk
+        5. Fallback aggressivo se ancora insufficienti
         
         Args:
             required_count: Numero di nodi richiesti
             required_capabilities: Capacità richieste
             prefer_distributed: Se true, usa random walk per distribuzione
+            max_discovery_time: Timeout massimo per il discovery (aumentato)
             
         Returns:
             List[str]: Lista di node_id disponibili
@@ -85,8 +88,41 @@ class SmartDiscoveryStrategy:
             "smart_discovery_start",
             required_count=required_count,
             capabilities=required_capabilities,
-            prefer_distributed=prefer_distributed
+            prefer_distributed=prefer_distributed,
+            max_discovery_time=max_discovery_time
         )
+        
+        # NUOVO: Analizza lo stato della rete all'inizio
+        try:
+            routing_info = self.coordinator.get_routing_table_info()
+            network_health = routing_info.get("network_health", {})
+            total_nodes = routing_info.get("total_nodes", 0)
+            
+            logger.info(
+                "initial_network_analysis",
+                total_nodes=total_nodes,
+                well_distributed=network_health.get("well_distributed", False),
+                distribution_score=network_health.get("distribution_score", 0.0),
+                active_buckets=routing_info.get("active_buckets", 0)
+            )
+            
+            # Se la rete è in cattivo stato, aumenta il timeout
+            if (total_nodes < required_count * 2 or
+                not network_health.get("well_distributed", False) or
+                network_health.get("distribution_score", 0.0) < 0.3):
+                
+                # Estendi il timeout per reti in cattivo stato
+                additional_time = min(60, max_discovery_time // 2)
+                discovery_deadline += timedelta(seconds=additional_time)
+                
+                logger.info(
+                    "poor_network_detected_extending_timeout",
+                    additional_time=additional_time,
+                    new_deadline=discovery_deadline
+                )
+                
+        except Exception as e:
+            logger.warning("failed_to_analyze_network_state", error=str(e))
         
         # Step 1: Prova dalla cache
         if self.cache:
@@ -103,19 +139,32 @@ class SmartDiscoveryStrategy:
                 required=required_count
             )
         
-        # Step 2: Se ancora servono nodi, usa discovery standard con timeout
+        # Step 2: Se ancora servono nodi, usa discovery standard con retry e timeout
         remaining = required_count - len(discovered_node_ids)
         if remaining > 0 and datetime.now() < discovery_deadline:
+            # Calcola timeout adattivo basato sul tempo rimanente
+            time_remaining = (discovery_deadline - datetime.now()).total_seconds()
+            discovery_timeout = max(30, min(time_remaining * 0.6, 60))  # 60% del tempo rimanente
+            
             try:
+                logger.info(
+                    "starting_standard_discovery",
+                    remaining=remaining,
+                    timeout=discovery_timeout
+                )
+                
                 discovery_result = await asyncio.wait_for(
                     self.discovery.discover_nodes_for_roles(
-                        required_count=remaining,
+                        required_count=remaining * 2,  # Cerca più nodi del necessario
                         required_capabilities=required_capabilities
                     ),
-                    timeout=(discovery_deadline - datetime.now()).total_seconds()
+                    timeout=discovery_timeout
                 )
             except asyncio.TimeoutError:
-                logger.warning("discovery_timeout", remaining=remaining)
+                logger.warning("standard_discovery_timeout", remaining=remaining)
+                discovery_result = type('DiscoveryResult', (), {'discovered_nodes': []})()
+            except Exception as e:
+                logger.error("standard_discovery_error", error=str(e))
                 discovery_result = type('DiscoveryResult', (), {'discovered_nodes': []})()
             
             new_nodes = discovery_result.discovered_nodes
@@ -126,29 +175,44 @@ class SmartDiscoveryStrategy:
                 for node in new_nodes:
                     self.cache.add(node)
             
-            logger.debug(
-                "nodes_from_discovery",
+            logger.info(
+                "nodes_from_standard_discovery",
                 count=len(new_nodes),
-                remaining=remaining
+                remaining_before=remaining,
+                total_after=len(discovered_node_ids)
             )
         
-        # Step 3: Se serve distribuzione geografica, usa random walk con timeout
+        # Step 3: Se ancora servono nodi, prova random walk con timeout
         remaining = required_count - len(discovered_node_ids)
         if remaining > 0 and prefer_distributed and self.random_walk and datetime.now() < discovery_deadline:
-            # Calcola quanti walk servono (adattivo per reti grandi)
-            walks_needed = max(min(remaining // 20, 20), 5)  # Tra 5 e 20 walk per reti grandi
-            k_per_walk = min(100, max(20, remaining // walks_needed))  # Adattivo per grandi reti
+            time_remaining = (discovery_deadline - datetime.now()).total_seconds()
+            walk_timeout = max(20, min(time_remaining * 0.7, 45))  # 70% del tempo rimanente
+            
+            # Calcola parametri adattivi per random walk
+            walks_needed = max(min(remaining // 15, 25), 8)  # Aumentato per reti difficili
+            k_per_walk = min(120, max(25, remaining // walks_needed))  # Più aggressivo
 
             try:
+                logger.info(
+                    "starting_random_walk",
+                    remaining=remaining,
+                    walks_needed=walks_needed,
+                    k_per_walk=k_per_walk,
+                    timeout=walk_timeout
+                )
+                
                 explored_nodes = await asyncio.wait_for(
                     self.random_walk.explore_network(
                         walk_count=walks_needed,
                         k_per_walk=k_per_walk
                     ),
-                    timeout=(discovery_deadline - datetime.now()).total_seconds()
+                    timeout=walk_timeout
                 )
             except asyncio.TimeoutError:
                 logger.warning("random_walk_timeout", remaining=remaining)
+                explored_nodes = []
+            except Exception as e:
+                logger.error("random_walk_error", error=str(e))
                 explored_nodes = []
             
             # Filtra per capacità se richieste
@@ -170,34 +234,81 @@ class SmartDiscoveryStrategy:
                     if len(discovered_node_ids) >= required_count:
                         break
             
-            logger.debug(
+            logger.info(
                 "nodes_from_random_walk",
                 count=len(explored_nodes),
-                remaining=remaining
+                remaining_before=remaining,
+                total_after=len(discovered_node_ids)
             )
+        
+        # Step 4: Fallback aggressivo se ancora insufficienti
+        remaining = required_count - len(discovered_node_ids)
+        if remaining > 0 and datetime.now() < discovery_deadline:
+            logger.warning(
+                "attempting_aggressive_fallback",
+                remaining=remaining,
+                time_left=(discovery_deadline - datetime.now()).total_seconds()
+            )
+            
+            try:
+                # Prova discovery senza filtri e con parametri massimi
+                fallback_result = await asyncio.wait_for(
+                    self.discovery.discover_nodes_for_roles(
+                        required_count=remaining * 3,  # Massimo sforzo
+                        required_capabilities=None  # Senza filtri
+                    ),
+                    timeout=30.0
+                )
+                
+                fallback_nodes = fallback_result.discovered_nodes
+                discovered_node_ids.extend([n.node_id for n in fallback_nodes])
+                
+                # Aggiungi alla cache
+                if self.cache:
+                    for node in fallback_nodes:
+                        self.cache.add(node)
+                
+                logger.info(
+                    "nodes_from_aggressive_fallback",
+                    count=len(fallback_nodes),
+                    total_after=len(discovered_node_ids)
+                )
+                
+            except Exception as e:
+                logger.error("aggressive_fallback_failed", error=str(e))
         
         duration = (datetime.now() - start_time).total_seconds()
         
-        # Verifica se abbiamo trovato abbastanza nodi
+        # Verifica finale se abbiamo trovato abbastanza nodi
         if len(discovered_node_ids) < required_count:
-            logger.warning(
-                "insufficient_nodes_discovered",
+            logger.error(
+                "insufficient_nodes_after_all_strategies",
                 found=len(discovered_node_ids),
-                required=required_count
+                required=required_count,
+                duration=duration,
+                strategies_used=["cache", "standard_discovery", "random_walk", "aggressive_fallback"]
             )
             raise ValueError(
-                f"Nodi insufficienti: trovati {len(discovered_node_ids)}, "
-                f"richiesti {required_count}"
+                f"Nodi insufficienti dopo tutte le strategie: trovati {len(discovered_node_ids)}, "
+                f"richiesti {required_count}. Durata: {duration:.2f}s"
             )
         
         logger.info(
             "smart_discovery_complete",
             discovered=len(discovered_node_ids),
+            required=required_count,
             duration_seconds=duration,
             cache_stats=self.cache.get_stats() if self.cache else {}
         )
         
-        return discovered_node_ids[:required_count]
+        # NUOVO: Restituisci TUTTI i nodi trovati, non solo quelli richiesti
+        # Questo permette al chiamante di decidere come usare i nodi extra
+        logger.info(
+            "smart_discovery_returning_all_nodes",
+            returning=len(discovered_node_ids),
+            required=required_count
+        )
+        return discovered_node_ids
     
     async def _periodic_refresh(self):
         """Task periodico per refresh dei nodi in cache"""

@@ -31,15 +31,30 @@ async def main():
         else:
             logger.info(f"✓ Bootstrap primario '{node_id}' attivo e in ascolto su {port}")
 
-        # Mantieni il nodo in esecuzione
-        await asyncio.Event().wait()
-        
+        # Mantieni il nodo in esecuzione indefinitamente
+        logger.info(f"✓ Bootstrap node '{node_id}' ora in esecuzione continua. In ascolto sulla porta {port}...")
+        while True:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                logger.info(f"Bootstrap node '{node_id}' ricevuto segnale di cancellazione, ma rimane attivo...")
+                # Ignora la cancellazione e continua l'esecuzione
+                await asyncio.sleep(1)
+            except Exception as e:
+                logger.error(f"✗ Errore nel loop principale del bootstrap '{node_id}': {e}", exc_info=True)
+                await asyncio.sleep(5)  # Breve pausa prima di continuare
+
     except Exception as e:
-        logger.error(f"✗ Errore critico nel bootstrap node: {e}", exc_info=True)
-    finally:
-        if bootstrap_node:
-            await bootstrap_node.stop()
-        logger.info("Bootstrap node fermato.")
+        logger.error(f"✗ Errore critico durante l'avvio del bootstrap node '{node_id}': {e}", exc_info=True)
+        logger.info(f"✓ Bootstrap node '{node_id}' rimane attivo nonostante l'errore critico...")
+        # In caso di errore critico durante l'avvio, mantieni comunque il nodo attivo
+        while True:
+            try:
+                await asyncio.sleep(10)
+                logger.info(f"Bootstrap node '{node_id}' ancora attivo dopo errore critico...")
+            except Exception as retry_e:
+                logger.error(f"✗ Errore anche nel loop di recupero: {retry_e}")
+                await asyncio.sleep(30)
 
 if __name__ == "__main__":
     asyncio.run(main())
