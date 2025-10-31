@@ -50,7 +50,7 @@ class CQKDNode:
     @staticmethod
     def _generate_node_id() -> str:
         """Genera un ID univoco per il nodo"""
-        return f"node_{secrets.token_hex(8)}"
+        return f"node_{secrets.token_hex(20)}"
     
     async def start(self):
         """Avvia il nodo DHT"""
@@ -211,9 +211,13 @@ class CQKDNode:
                 logger.warning("dns_hostname_issue_detected", node_id=self.node_id, issue=str(e))
                 # Force refresh routing table se possibile
                 try:
-                    # Refresh router per forzare risoluzione IP
-                    if hasattr(self.server.protocol, 'router'):
-                        self.server.protocol.router.refresh_table()
+                    # Use the correct method on the server object, not the router
+                    logger.debug("attempting_routing_table_refresh", node_id=self.node_id)
+                    
+                    # Call refresh_table on the server object (not on the router)
+                    self.server.refresh_table()
+                    
+                    logger.info("routing_table_refresh_completed", node_id=self.node_id)
                     # Riprova lo store
                     await self.server.set(key, value)
                     logger.info("data_stored_after_refresh", node_id=self.node_id, key=key)
