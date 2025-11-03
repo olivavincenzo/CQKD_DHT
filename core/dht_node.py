@@ -306,6 +306,23 @@ class CQKDNode:
                 error=str(e)
             )
             return None
+
+    async def delete_data(self, key: str):
+        """Rimuove una chiave dalla DHT impostando il suo valore a None."""
+        try:
+            # In Kademlia, non c'è un 'delete' esplicito.
+            # Impostare il valore a None o a un marcatore con scadenza
+            # è l'approccio comune. Qui sovrascriviamo con None.
+            await self.server.set(key, "__DELETED__")
+            logger.debug("data_deleted", node_id=self.node_id, key=key)
+        except Exception as e:
+            logger.error(
+                "data_delete_failed",
+                node_id=self.node_id,
+                key=key,
+                error=str(e)
+            )
+            # Non rilanciamo l'eccezione per non interrompere il flusso principale
             
     async def stop(self):
         """Ferma il nodo DHT"""

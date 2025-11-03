@@ -45,6 +45,10 @@ async def main():
         
         logger.info(f"✓ Bob ha ricevuto process_id: {process_id}. Avvio ricezione chiave...")
         
+        # -> CANCELLA LA CHIAVE DALLA DHT
+        await bob_node.delete_data(PROCESS_ID_KEY)
+        logger.info(f"✓ Chiave '{PROCESS_ID_KEY}' cancellata dalla DHT.")
+
         # Avvia la ricezione della chiave
         bob_key = await bob_protocol.receive_key(process_id)
         
@@ -63,12 +67,16 @@ async def main():
                 process_id = None
 
                 # Attendi che Alice pubblichi un nuovo process_id
-                while process_id is None:
+                while process_id is None or process_id == "__DELETED__":
                     process_id = await bob_node.retrieve_data(PROCESS_ID_KEY)
                     if process_id is None:
                         await asyncio.sleep(2)
 
                 logger.info(f"✓ Bob ha ricevuto nuovo process_id: {process_id}. Avvio ricezione chiave...")
+
+                # -> CANCELLA LA CHIAVE DALLA DHT
+                await bob_node.delete_data(PROCESS_ID_KEY)
+                logger.info(f"✓ Nuova chiave '{PROCESS_ID_KEY}' cancellata dalla DHT.")
 
                 # Avvia la ricezione della nuova chiave
                 bob_key = await bob_protocol.receive_key(process_id)
