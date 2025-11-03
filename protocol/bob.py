@@ -6,7 +6,7 @@ from core.node_states import NodeRole
 from quantum.bg import BaseGenerator
 from quantum.qpm import QuantumPhotonMeter
 from utils.logging_config import get_logger
-
+import datetime
 
 logger = get_logger(__name__)
 
@@ -21,7 +21,7 @@ class Bob:
         self.node = node
         self.bob_bases: List[str] = []
         self.bob_bits: List[int] = []
-        
+        self.process_id: None
     async def receive_key(self, process_id: str) -> bytes:
         """
         Bob riceve e genera chiave seguendo STEP 12-17
@@ -32,114 +32,130 @@ class Bob:
         Returns:
             bytes: Chiave generata
         """
-        logger.info("bob_waiting_for_alice_notification", process_id=process_id)
-        
-        # ========== STEP 12: Bob attende notifica da Alice ==========
-        notification = await self._wait_for_alice_notification(process_id)
-        
-        lk = notification['lk']
-        lc = notification.get('lc') 
-        sorting_rule = notification['sorting_rule']
-        qpm_addresses = notification['qpm_addresses']
-        
-        logger.info(
-            "step_12_complete",
-            lk=lk,
-            lc=lc,
-            qpm_count=len(qpm_addresses)
-        )
-        
-        # ========== STEP 13: Bob genera basi casuali ==========
-        self.bob_bases = BaseGenerator.generate_base_sequence(lk)
-        
-        logger.info("step_13_complete", bob_bases_count=len(self.bob_bases))
-        
-        # ========== STEP 14-15: Bob misura fotoni dai QPM ==========
-        measurements = []
-        tasks = []
-        
-        for i in range(lk):
-            original_index = sorting_rule[i]  # Applica sorting rule
-            task = self._measure_photon(
-                process_id,
-                original_index,  # Usa indice originale per chiave DHT
-                qpm_addresses[original_index],
-                self.bob_bases[i]
+
+        try:
+            logger.info("bob_waiting_for_alice_notification", process_id=process_id)
+            self.process_id= process_id
+            
+            
+            # ========== STEP 12: Bob attende notifica da Alice ==========
+            notification = await self._wait_for_alice_notification(process_id)
+            
+            lk = notification['lk']
+            lc = notification.get('lc') 
+            alice_bases = notification["alice_bases"]
+            qpm_nodes = notification["qpm_nodes"]
+ 
+
+            logger.info(
+                "step_11_notification_received",
+                process_id=process_id,
+                lc=lc,
+                lk=lk
             )
-            tasks.append(task)
-        
-        measurement_results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Verifica errori
-        errors = [r for r in measurement_results if isinstance(r, Exception)]
-        if errors:
-            logger.error("bob_measurement_errors", error_count=len(errors))
-            # Log primi 3 errori per debug
-            for err in errors[:3]:
-                logger.error("measurement_error_detail", error=str(err))
-            raise RuntimeError(f"Errori durante misurazioni: {len(errors)}")
-        
-        
-        # Ricostruisci l'elenco dei bit di Bob nell'ordine originale,
-        # dato che i risultati di `asyncio.gather` non hanno un ordine garantito.
-        # Ogni risultato di misurazione contiene il suo indice originale.
-        original_order_bits = [0] * lk
-        for measurement in measurement_results:
-            # L'indice originale è nell'oggetto 'measurement' stesso
-            original_idx = measurement['index']
-            original_order_bits[original_idx] = measurement['measured_bit']
+            
+            # ===== STEP 15: DISPATCH commands to BG nodes for Bob's bases =====
+            await self._dispatch_base_generation(lk, qpm_nodes)
+            # Collect Bob's bases from workers
+            self.bob_bases = await self._collect_bob_bases(lk)
 
-        self.bob_bits = original_order_bits  # Ora i bit di Bob sono nello stesso ordine di quelli originali di Alice
-        measurements = measurement_results
+            logger.info("step_15_bases_generated_by_workers", count=len(self.bob_bases))
+                
+            # ===== STEP 16-17: DISPATCH commands to QPM nodes for measurements =====
+            await self._dispatch_measurements(lk, qpm_nodes)
 
-        logger.info(
-            "step_14_15_complete",
-            measurements_count=len(self.bob_bits),
-            successful=len([r for r in measurements if not isinstance(r, Exception)])
-        )
-        
-        # ========== STEP 16-17: Bob invia misurazioni al QPC ==========
-        # Scrivi misurazioni nella DHT per il QPC
-        for measurement in measurements:
-            idx = measurement['index']
-            key = f"{process_id}:qpm:{idx}:measurement"
-            await self.node.store_data(key, json.dumps(measurement))
-        
-        logger.info("step_16_17_complete", measurements_sent=len(measurements))
-        
-        # ========== STEP 18: Bob attende risultati QPC ==========
-        valid_positions = await self._wait_for_qpc_results(process_id)
-        
-        logger.info(
-            "step_18_complete",
-            valid_positions_count=len(valid_positions),
-            sift_ratio=len(valid_positions) / lk if lk > 0 else 0
-        )
-        
-        # ========== STEP 19: Bob genera chiave finale ==========
-        sifted_bits = [self.bob_bits[i] for i in valid_positions if i < len(self.bob_bits)]
-
-        if len(sifted_bits) < lc:
-            raise ValueError(
-                f"Bit insufficienti dopo sifting: "
-                f"richiesti {lc}, ottenuti {len(sifted_bits)}"
+            # Collect Bob's measurements from workers
+            self.bob_bits = await self._collect_measurements(lk)
+            
+            logger.info(
+                "step_16_17_measurements_complete_from_workers",
+                measurements=len(self.bob_bits)
             )
-        
 
-        final_key_bits = sifted_bits[:lc]
-        
-        from protocol.key_generation import KeyGenerationOrchestrator
-        key_bytes = KeyGenerationOrchestrator.bits_to_bytes(final_key_bits)
-        
-        logger.info(
-            "bob_key_generation_complete",
-            process_id=process_id,
-            final_key_length_bits=len(final_key_bits),
-            final_key_length_bytes=len(key_bytes)
-        )
-        
-        return key_bytes
+
+
+            # ===== STEP 18: Perform sifting with base comparison =====
+            valid_positions = []
+            for i in range(min(len(alice_bases), len(self.bob_bases))):
+                if alice_bases[i] == self.bob_bases[i]:
+                    valid_positions.append(i)
+            
+            logger.info(
+                "step_18_base_comparison_sifting",
+                total_bits=lk,
+                matching_bases=len(valid_positions),
+                sift_ratio=len(valid_positions) / lk if lk > 0 else 0
+            )
+            
+            # Store sifting results for Alice
+            sifting_result = {
+                "process_id": self.process_id,
+                "valid_positions": valid_positions,
+                "total_bits": lk,
+                "sift_ratio": len(valid_positions) / lk if lk > 0 else 0,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await self.node.store_data(
+                f"{self.process_id}:qpc_sifting_result",
+                 json.dumps(sifting_result)
+            )
+            await self.node.store_data(
+                "latest_qpc_sifting_result",
+                 json.dumps(sifting_result)
+            )
+            
+            logger.info(
+                "step_18_sifting_complete_stored",
+                valid_positions=len(valid_positions)
+            )
+            
+            # ===== STEP 19: Extract final key =====
+            sifted_bits = [
+                self.bob_bits[i] for i in valid_positions
+                if i < len(self.bob_bits)
+            ]
+            
+            if len(sifted_bits) < lc:
+                logger.warning(
+                    "insufficient_bits_after_sifting",
+                    required=lc,
+                    available=len(sifted_bits)
+                )
+                final_key_bits = sifted_bits
+            else:
+                final_key_bits = sifted_bits[:lc]
+            
+
+            from protocol.key_generation import KeyGenerationOrchestrator
+            key_bytes = KeyGenerationOrchestrator.bits_to_bytes(final_key_bits)
+            
+            
+            logger.info(
+                "step_19_final_key_extracted",
+                key_bits=len(final_key_bits),
+                key_bytes=len(key_bytes)
+            )
+            
+            logger.info(
+                "bob_19step_protocol_complete",
+                process_id=self.process_id,
+                key_length=len(key_bytes)
+            )
+            
+            return key_bytes
+        except Exception as e:
+            logger.error(
+                "bob_protocol_failed",
+                error=str(e),
+                process_id=self.process_id,
+                exc_info=True
+            )
+            raise
     
+
+    
+
     async def _wait_for_alice_notification(self, process_id: str) -> Dict[str, Any]:
         """
         STEP 12: Attende notifica da Alice
@@ -161,75 +177,138 @@ class Bob:
             await asyncio.sleep(0.5)
         
         raise TimeoutError("Timeout waiting for Alice notification")
-    
-    async def _measure_photon(
-        self,
-        process_id: str,
-        index: int,
-        qpm_node_id: str,
-        bob_base: str
-    ) -> Dict[str, Any]:
+
+
+    async def _dispatch_base_generation(self, lk: int, qpm_nodes: List[str]):
         """
-        STEP 14-15: Misura un singolo fotone
-        
-        Returns:
-            Dict con risultato misurazione
+        STEP 15: Dispatch commands to BG nodes to generate Bob's bases.
         """
-        # Recupera polarizzazione da Alice (scritta da QPP)
-        key = f"{process_id}:qpp:photon_{index}:to_qpm:{qpm_node_id}"
-        
-        # Polling per aspettare dati da Alice
-        alice_data = None
-        for _ in range(20):  # 10 secondi max
-            data_str = await self.node.retrieve_data(key)
-            if data_str:
-                alice_data = json.loads(data_str)
-                break
-            await asyncio.sleep(0.5)
-        
-        if alice_data is None:
-            raise ValueError(f"Polarizzazione non ricevuta per fotone {index}")
-        
-        alice_polarization = alice_data.get('polarization')
-        alice_base = alice_data.get('alice_base')
-        
-        # Esegui misurazione quantistica
-        measured_bit, bases_match = QuantumPhotonMeter.measure(
-            alice_polarization,
-            bob_base
+        logger.info(
+            "dispatching_base_generation_to_workers",
+            process_id=self.process_id,
+            lk=lk
         )
         
-        return {
-            "index": index,
-            "measured_bit": measured_bit,
-            "bob_base": bob_base,
-            "alice_base": alice_base,
-            "alice_polarization": alice_polarization,
-            "bases_match": bases_match,
-            "qpm_node": qpm_node_id
-        }
-    
-    async def _wait_for_qpc_results(self, process_id: str) -> List[int]:
-        """
-        STEP 18: Attende risultati dal QPC
+        dispatch_tasks = []
         
-        Returns:
-            List[int]: Posizioni valide (basi coincidenti)
-        """
-        key = f"{process_id}:qpc:collision:valid_positions_bob"
-        
-        # Polling con timeout
-        max_attempts = 60
-        for attempt in range(max_attempts):
-            result_str = await self.node.retrieve_data(key)
-            if result_str:
-                # Parse lista da stringa
-                import ast
-                valid_positions = ast.literal_eval(result_str)
-                return valid_positions
+        for i in range(lk):
+            # Reuse some nodes or use available BG nodes
+            # In practice, you'd have a pool of BG nodes
+            bg_cmd = {
+                "cmd_id": f"{self.process_id}_bg_bob_{i}",
+                "process_id": self.process_id,
+                "role": NodeRole.BG.value,
+                "operation_id": i,
+                "params": {
+                    "process_id": self.process_id,
+                    "operation_id": i,
+                    "bob_addr": self.node.node_id,
+                    "qpm_addr": qpm_nodes[i % len(qpm_nodes)] if qpm_nodes else None
+                }
+            }
             
-            await asyncio.sleep(1)
+            # Note: In real implementation, you'd get BG node IDs from allocation
+            # For now, we'll store with a generic key pattern
+            dispatch_tasks.append(
+                self.node.store_data(
+                    f"{self.process_id}:cmd_bg_bob:{i}",
+                     json.dumps(bg_cmd)
+                )
+            )
         
-        raise TimeoutError("Timeout waiting for QPC collision results")
+        await asyncio.gather(*dispatch_tasks)
+        
+        logger.info("base_generation_dispatched", commands=len(dispatch_tasks))
 
+    async def _collect_bob_bases(self, lk: int) -> List[str]:
+        """
+        Collect Bob's bases generated by BG worker nodes.
+        """
+        logger.info("collecting_bob_bases_from_workers", lk=lk)
+        
+        bases = []
+        
+        for i in range(lk):
+            result = await self._wait_for_result(
+                f"{self.process_id}:bg_bob_result:{i}",
+                timeout=30
+            )
+            bases.append(result.get("base", "+"))
+        
+        return bases
 
+    async def _dispatch_measurements(
+        self, 
+        lk: int, 
+        qpm_nodes: List[str]
+    ):
+        """
+        STEP 16-17: Dispatch commands to QPM nodes for measurements.
+        """
+        logger.info("dispatching_measurements_to_workers", lk=lk)
+        
+        dispatch_tasks = []
+        
+        for i in range(lk):
+            qpm_node_id = qpm_nodes[i % len(qpm_nodes)]
+            
+            qpm_cmd = {
+                "cmd_id": f"{self.process_id}_qpm_{i}",
+                "process_id": self.process_id,
+                "role": NodeRole.QPM.value,
+                "operation_id": i,
+                "params": {
+                    "process_id": self.process_id,
+                    "operation_id": i,
+                    "alice_polarization_key": f"{self.process_id}:polarization:{i}",
+                    "bob_base_key": f"{self.process_id}:bg_bob_result:{i}",
+                    "bob_addr": self.node.node_id,
+                    "qpc_addr": None
+                }
+            }
+            
+            dispatch_tasks.append(
+                self.node.store_data(f"cmd:{qpm_node_id}", json.dumps(qpm_cmd))
+            )
+        
+        await asyncio.gather(*dispatch_tasks)
+        
+        logger.info("measurements_dispatched", commands=len(dispatch_tasks))
+
+    async def _collect_measurements(self, lk: int) -> List[int]:
+        """
+        Collect measurements from QPM worker nodes.
+        """
+        logger.info("collecting_measurements_from_workers", lk=lk)
+        
+        bits = []
+        
+        for i in range(lk):
+            result = await self._wait_for_result(
+                f"{self.process_id}:qpm_result:{i}",
+                timeout=30
+            )
+            bits.append(result.get("bit", 0))
+        
+        return bits
+
+    async def _wait_for_result(
+        self, 
+        key: str, 
+        timeout: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Wait for a specific result to appear in DHT.
+        """
+        for attempt in range(timeout * 2):
+            result = await self.node.retrieve_data(key)
+            
+            if result:
+                return result
+            
+            await asyncio.sleep(0.5)
+            
+            if (attempt + 1) % 10 == 0:
+                logger.debug("still_waiting_for_result", key=key, attempt=attempt + 1)
+        
+        raise TimeoutError(f"Timeout waiting for result: {key}")

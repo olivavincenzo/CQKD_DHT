@@ -2,5 +2,4 @@ curl -X POST http://localhost:8001/generate-key -H "Content-Type: application/js
 
 docker-compose up --build --scale worker=10
 
-
 curl -s http://localhost:8001/network-status

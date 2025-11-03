@@ -17,7 +17,9 @@ class KeyGenerationOrchestrator:
     def __init__(self, coordinator_node: CQKDNode):
         self.coordinator = coordinator_node
         self.process_id = self._generate_process_id()
-
+        self.allocated_nodes: Dict[NodeRole, List[str]] = {}
+        self._lock = asyncio.Lock()
+        
         self.smart_discovery = SmartDiscoveryStrategy(
             coordinator_node,
             enable_cache=True,
@@ -30,8 +32,7 @@ class KeyGenerationOrchestrator:
     @staticmethod
     def _generate_process_id() -> str:
         """Genera un ID univoco per il processo di generazione chiave"""
-        return os.getenv("SESSION_ID", "default_session")
-        #return f"cqkd_{secrets.token_hex(16)}"
+        return f"cqkd_{secrets.token_hex(16)}"
     
 
     def calculate_required_nodes(self, desired_key_length: int) -> Dict[str, int]:
@@ -252,7 +253,39 @@ class KeyGenerationOrchestrator:
                     note="Continuing without background refresh"
                 )
 
-    
+    async def stop(self):
+        """
+        Stop the key generation orchestrator and background tasks.
+        
+        This method should be called when the orchestrator is no longer
+        needed to properly clean up resources.
+        """
+        logger.info(
+            "stopping_orchestrator",
+            node_id=self.node.node_id if self.node else "standalone"
+        )
+        
+        if self.smart_discovery and self._background_tasks_started:
+            try:
+                await self.smart_discovery.stop_background_tasks()
+                self._background_tasks_started = False
+                logger.info(
+                    "background_tasks_stopped",
+                    node_id=self.node.node_id if self.node else "standalone"
+                )
+            except Exception as e:
+                logger.error(
+                    "failed_to_stop_background_tasks",
+                    error=str(e),
+                    node_id=self.node.node_id if self.node else "standalone"
+                )
+        
+        logger.info(
+            "orchestrator_stopped",
+            node_id=self.node.node_id if self.node else "standalone"
+        )
+
+
     async def allocate_nodes(
         self,
         available_nodes: List[str],
@@ -268,6 +301,8 @@ class KeyGenerationOrchestrator:
         Returns:
             dict: Mapping ruolo -> lista node_id
         """
+
+
         if len(available_nodes) < requirements['total']:
             raise ValueError(
                 f"Nodi insufficienti: richiesti {requirements['total']}, "
@@ -284,6 +319,8 @@ class KeyGenerationOrchestrator:
             role = NodeRole[role_name.upper()]
             allocation[role] = available_nodes[idx:idx + count]
             idx += count
+
+        self.allocated_nodes = allocation
 
         logger.info(
             "nodes_allocated",
@@ -348,6 +385,64 @@ class KeyGenerationOrchestrator:
         )
         
         return reduced_requirements
+
+    async def complete_process(
+        self,
+        success: bool = True,
+        error_message: Optional[str] = None
+    ):
+        """
+        Mark process as completed.
+        
+        IMPORTANT: Keep stored data small (< 8KB for Kademlia UDP limit).
+        """
+        if not self.process_id:
+            return
+        
+        status = "completed" if success else "failed"
+        
+        # DON'T store full allocated_nodes list - it's too big!
+        # Just store summary statistics
+        allocation_summary = {}
+        if self.allocated_nodes:
+            for role, nodes in self.allocated_nodes.items():
+                allocation_summary[role.value] = {
+                    "count": len(nodes),
+                    # Store only first 3 node IDs for verification
+                    "sample": [n[:16] for n in nodes[:3]] if nodes else []
+                }
+        
+        completion_data = {
+            "status": status,
+            "timestamp": datetime.now().isoformat(),
+            "orchestrator": self.node.node_id if self.node else "standalone",
+            "allocation_summary": allocation_summary  # Summary instead of full list
+        }
+        
+        if error_message:
+            # Truncate error if too long
+            completion_data["error"] = error_message[:500]
+        
+        if self.node:
+            try:
+                await self.node.store_data(
+                    f"{self.process_id}:completion",
+                    completion_data
+                )
+            except Exception as e:
+                logger.error(
+                    "completion_store_failed",
+                    error=str(e),
+                    data_size=len(str(completion_data))
+                )
+                # Don't fail the whole process if storing completion fails
+        
+        logger.info(
+            "process_completed",
+            process_id=self.process_id,
+            status=status,
+            error_message=error_message
+        )
 
     @staticmethod
     def bits_to_bytes(bits: List[int]) -> bytes:

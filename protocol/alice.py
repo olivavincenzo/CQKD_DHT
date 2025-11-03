@@ -1,5 +1,6 @@
 import asyncio
 import secrets
+import json
 from typing import List, Dict, Any, Optional, Tuple
 from core.dht_node import CQKDNode
 from core.node_states import NodeRole
@@ -7,7 +8,9 @@ from protocol.key_generation import KeyGenerationOrchestrator
 from quantum.qsg import QuantumSpinGenerator
 from quantum.bg import BaseGenerator
 from quantum.qpp import QuantumPhotonPolarizer
+import datetime
 from utils.logging_config import get_logger
+
 logger = get_logger(__name__)
 
 
@@ -18,6 +21,7 @@ class Alice:
     
     def __init__(self, node: CQKDNode, bob_address: str):
         self.node = node
+        self.process_id = None
         self.bob_address = bob_address
         self.orchestrator = KeyGenerationOrchestrator(node)
         self.alice_bases: List[str] = []
@@ -39,197 +43,315 @@ class Alice:
         Returns:
             bytes: Chiave generata
         """
-        process_id = self.orchestrator.process_id
-        
-        logger.info(
-            "alice_key_generation_start_19steps",
-            process_id=process_id,
-            desired_length=desired_length_bits
-        )
-        
-        # ========== STEP 1: Alice calcola lk = |2.5 * lc| ==========
-        requirements = self.orchestrator.calculate_required_nodes(desired_length_bits)
-        lk = requirements['initial_key_length']
-        lc = desired_length_bits
-        alpha = lk*lc
-        
-        logger.info("step_1_complete", lc=lc, lk=lk, alpha=alpha)
-        
-        # ========== STEP 2-3: Alice ping nodi e verifica #(n) >= 5lk ==========
-        if available_nodes is None:
-            available_nodes = await self.orchestrator.discover_available_nodes(
-                required_count=alpha,
-                required_capabilities=None,  # Tutte le capacità per massima flessibilità
-                max_retries=3  # NUOVO: Aumenta retry per discovery robusto
-            )
-        
-        if len(available_nodes) < alpha:
-            raise ValueError(
-                f"Nodi insufficienti: richiesti {requirements['total']}, "
-                f"disponibili {len(available_nodes)}"
-            )
-        
-        logger.info("step_2_3_complete", available_nodes=len(available_nodes))
-        
-        # ========== STEP 4-6: Alice alloca nodi QSG, BG, QPP ==========
-        allocation = await self.orchestrator.allocate_nodes(
-            available_nodes,
-            requirements
-        )
-        
-        logger.info(
-            "step_4_5_6_complete",
-            qsg_count=len(allocation[NodeRole.QSG]),
-            bg_count=len(allocation[NodeRole.BG]),
-            qpp_count=len(allocation[NodeRole.QPP])
-        )
-        
-        # ========== STEP 7: Alice apre process_id unico ==========
-        logger.info("step_7_complete", process_id=process_id)
         
         
-        # ========== STEP 8-9: Alice comanda nodi e riceve risultati ==========
-        self.alice_bases = BaseGenerator.generate_base_sequence(lk)
-
-        # Genera fotoni computazionali in parallelo
-        tasks = []
-        for i in range(lk):
-            task = self._execute_qsg_bg_qpp_chain(
-                i,
-                allocation[NodeRole.QSG][i],
-                allocation[NodeRole.QPP][i],
-                allocation[NodeRole.QPM][i],
-                self.alice_bases[i]
-            )
-            tasks.append(task)
-
-        photon_results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Verifica errori
-        errors = [r for r in photon_results if isinstance(r, Exception)]
-        if errors:
-            raise RuntimeError(f"Errori durante generazione fotoni: {len(errors)}")
-        
-        # Estrai bit di Alice
-        self.alice_bits = [r['alice_bit'] for r in photon_results]
-        
-        logger.info("step_8_9_complete", photons_generated=len(self.alice_bits))
-        
-        # ========== STEP 10: Alice genera NUOVO ORDINE CASUALE ==========
-        original_indices = list(range(lk))
-        shuffled_indices = original_indices.copy()
-        secrets.SystemRandom().shuffle(shuffled_indices)
-
-        self.sorting_rule = shuffled_indices
-        self.alice_bits_original = self.alice_bits.copy()  # ✅ SALVA ORIGINALE
-        shuffled_alice_bits = [self.alice_bits[i] for i in shuffled_indices]
-        self.alice_bits = shuffled_alice_bits
-                
-        logger.info("step_10_complete", sorting_rule_sample=self.sorting_rule[:10])
-        
-        # ========== STEP 11: Alice notifica Bob ==========
-        await self._notify_bob(
-            process_id=process_id,
-            lk=lk,
-            lc=lc,
-            sorting_rule=self.sorting_rule,
-            qpm_addresses=[allocation[NodeRole.QPM][i] for i in range(lk)]
-        )
-        
-        logger.info("step_11_complete", notified_bob=True)
-        
-        # ========== STEP 12-15: Attendi che Bob completi le misurazioni ==========
-        logger.info("waiting_for_bob_measurements")
-        await asyncio.sleep(2)  # Dai tempo a Bob di misurare
-        
-        # ========== STEP 16-17: Raccogli measurements e ATTIVA QPC ==========
-        logger.info("step_16_17_collecting_measurements")
-
-        import json  # ✅ Aggiungi import se non c'è già
-
-        measurements_for_qpc = []
-
-        max_retries = 10  # Aumenta tentativi
-        retry_delay = 1.0  # Secondi tra tentativi
-
-        for i in range(lk):
-            key_from_qpm = f"{process_id}:qpm:{i}:measurement"
-            measurement_str = None
+        try:       
+            # ========== STEP 1: Alice calcola lk = |2.5 * lc| ==========
+            requirements = self.orchestrator.calculate_required_nodes(desired_length_bits)
+            lk = requirements['initial_key_length']
+            lc = desired_length_bits
+            alpha = requirements['total']
             
-            # ✅ Retry loop per ogni measurement
-            for attempt in range(max_retries):
-                measurement_str = await self.node.retrieve_data(key_from_qpm)
-                if measurement_str:
-                    break  # Trovato!
-                
-                if attempt < max_retries - 1:
-                    logger.debug(
-                        "measurement_not_ready_retrying",
-                        index=i,
-                        attempt=attempt + 1
-                    )
-                    await asyncio.sleep(retry_delay)
+            logger.info("step_1_complete", lc=lc, lk=lk, alpha=alpha)
             
-            if measurement_str:
-                measurement = json.loads(measurement_str)
-                measurements_for_qpc.append(measurement)
-            else:
+            # ========== STEP 2: Alice ping nodi e verifica #(n) >= 5lk ==========
+            if available_nodes is None:
+                available_nodes = await self.orchestrator.discover_available_nodes(
+                    required_count=alpha,
+                    required_capabilities=None,  # Tutte le capacità per massima flessibilità
+                    max_retries=3  # NUOVO: Aumenta retry per discovery robusto
+                )
+            
+            # ========== STEP 3: Alice ping nodi e verifica #(n) >= 5lk ==========
+            
+            if len(available_nodes) < alpha:
+                raise ValueError(
+                    f"Nodi insufficienti: richiesti {requirements['total']}, "
+                    f"disponibili {len(available_nodes)}"
+                )
+            
+            logger.info("step_2", available_nodes=len(available_nodes))
+            
+            # ========== STEP 4: Alice alloca nodi QSG, BG, QPP, QPM, QPC ==========
+            allocation = await self.orchestrator.allocate_nodes(
+                available_nodes,
+                requirements
+            )
+
+            logger.info(f"!allocation: {allocation}")
+            
+            # ========== STEP 5: Alice apre process_id unico ==========
+            process_id = self.orchestrator.process_id
+            self.process_id = process_id
+            logger.info("step_7_complete", process_id=process_id)
+
+            # ========== STEP 6: DISPATCH commands to worker nodes ==========
+            await self._dispatch_quantum_operations(lk, allocation)
+            
+            # ========== STEP 7 (continued): COLLECT results from worker nodes =====
+            await self._collect_quantum_results(lk)
+
+            logger.info(
+                "step_8_9_quantum_data_collected_from_workers",
+                bits=len(self.alice_bits),
+                bases=len(self.alice_bases)
+            )
+
+            # ========== STEP 10: Random shuffling for security =====
+            indices = list(range(lk))
+            shuffled_indices = indices.copy()
+            secrets.SystemRandom().shuffle(shuffled_indices)
+            self.sorting_rule = shuffled_indices
+            
+            # Apply shuffling to ALL Alice's data
+            self.alice_bits = [self.alice_bits[i] for i in shuffled_indices]
+            self.alice_bases = [self.alice_bases[i] for i in shuffled_indices]
+            
+            logger.info(
+                "step_10_random_shuffling_applied",
+                sorting_rule_sample=self.sorting_rule[:5]
+            )
+            
+            shuffled_data={
+                "lk": lk,
+                "lc": lc,
+                "alice_bases": self.alice_bases,
+                "alice_bits": self.alice_bits,
+                "shuffled": True,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Store shuffled data for QPM nodes
+            await self.node.store_data(
+                f"{process_id}:alice_shuffled_data",
+                json.dumps(shuffled_data)
+    
+            )
+
+            # ===== STEP 11: Notify Bob =====
+            await self._notify_bob(
+                process_id,
+                lk, 
+                lc, 
+                self.sorting_rule, 
+                self.alice_bases, 
+                allocation
+            )
+            logger.info("step_11_bob_notified")
+
+            
+            # ========== STEP 12-15: Attendi che Bob completi le misurazioni ==========
+            logger.info("waiting_for_bob_and_qpc")
+            valid_positions = await self._wait_for_qpc_sifting()
+            
+            logger.info(
+                "step_18_sifting_complete",
+                valid_positions=len(valid_positions),
+                sift_ratio=len(valid_positions) / lk if lk > 0 else 0
+            )
+            
+            # ===== STEP 19: Extract final key from valid positions =====
+            sifted_bits = [
+                self.alice_bits[i] for i in valid_positions
+                if i < len(self.alice_bits)
+            ]
+            
+            if len(sifted_bits) < lc:
                 logger.warning(
-                    "measurement_missing_after_retries",
-                    index=i,
-                    max_retries=max_retries
+                    "insufficient_bits_after_sifting",
+                    required=lc,
+                    available=len(sifted_bits)
+                )
+                # Use what we have
+                final_key_bits = sifted_bits
+            else:
+                final_key_bits = sifted_bits[:lc]
+            
+            key_bytes = self.orchestrator.bits_to_bytes(final_key_bits)
+            
+            logger.info(
+                "step_19_final_key_extracted",
+                key_bits=len(final_key_bits),
+                key_bytes=len(key_bytes)
+            )
+            
+            await self.orchestrator.complete_process(success=True)
+            logger.info(
+                "alice_19step_protocol_complete",
+                process_id=process_id,
+                key_length=len(key_bytes)
+            )
+            
+            return key_bytes
+    
+        except Exception as e:
+                logger.error(
+                    "alice_protocol_failed",
+                    error=str(e),
+                    process_id=process_id,
+                    exc_info=True
+                )
+                
+                if process_id:
+                    await self.orchestrator.complete_process(
+                        success=False,
+                        error_message=str(e)
+                    )
+                
+                raise
+        finally:
+            await self.orchestrator.stop()
+        
+
+    async def _dispatch_quantum_operations(
+            self, 
+            lk: int, 
+            allocation: Dict[NodeRole, List[str]]
+        ):
+            """
+            STEP 8: Dispatch commands to worker nodes for quantum operations.
+            Alice sends commands via DHT, workers execute them.
+            """
+            logger.info(
+                "dispatching_quantum_operations_to_workers",
+                lk=lk
+            )
+            
+            qsg_nodes = allocation.get(NodeRole.QSG, [])
+            bg_nodes = allocation.get(NodeRole.BG, [])
+            qpp_nodes = allocation.get(NodeRole.QPP, [])
+            
+            # Dispatch commands to each worker node
+            dispatch_tasks = []
+            
+            for i in range(lk):
+                # Command to QSG node
+                qsg_node_id = qsg_nodes[i % len(qsg_nodes)]
+                qsg_cmd = {
+                    "cmd_id": f"{self.process_id}_qsg_{i}",
+                    "process_id": self.process_id,
+                    "role": NodeRole.QSG.value,
+                    "operation_id": i,
+                    "params": {
+                        "process_id": self.process_id,
+                        "operation_id": i,
+                        "alice_addr": self.node.node_id,
+                        "qpp_addr": qpp_nodes[i % len(qpp_nodes)]
+                    }
+                }
+                
+                # Command to BG node (for Alice's base)
+                bg_node_id = bg_nodes[i % len(bg_nodes)]
+                bg_cmd = {
+                    "cmd_id": f"{self.process_id}_bg_alice_{i}",
+                    "process_id": self.process_id,
+                    "role": NodeRole.BG.value,
+                    "operation_id": i,
+                    "params": {
+                        "process_id": self.process_id,
+                        "operation_id": i,
+                        "bob_addr": None,  # For Alice
+                        "qpm_addr": None
+                    }
+                }
+                
+                # Send commands to workers via DHT
+                
+
+
+                key_qsg=f"cmd:{qsg_node_id.get('id')}"
+                key_bg=f"cmd:{bg_node_id.get('id')}"
+                logger.info(f"Contatto il nodo qsg con: {key_qsg}")
+                logger.info(f"Contatto il nodo bg con: {key_bg}")
+
+
+                dispatch_tasks.append(
+                    self.node.store_data(key_qsg, json.dumps(qsg_cmd))
                 )
 
-        # ✅ Verifica che abbiamo TUTTE le measurements
-        if len(measurements_for_qpc) < lk:
-            raise ValueError(
-                f"Measurements incomplete: expected {lk}, got {len(measurements_for_qpc)}. "
-                f"Missing: {lk - len(measurements_for_qpc)}"
+                dispatch_tasks.append(
+                    self.node.store_data(key_bg, json.dumps(bg_cmd))
+                )
+            
+            # Wait for all commands to be dispatched
+            await asyncio.gather(*dispatch_tasks)
+            
+            logger.info(
+                "quantum_operations_dispatched",
+                process_id=self.process_id,
+                commands_sent=len(dispatch_tasks)
             )
 
-        logger.info("measurements_collected", count=len(measurements_for_qpc))
 
-        
-        # ESEGUI QPC SIFTING
-        qpc_node_info = allocation[NodeRole.QPC][0]
-        valid_positions = await self._execute_qpc_sifting(
-            process_id=process_id,
-            qpc_node=qpc_node_info,
-            measurements=measurements_for_qpc
-        )
-        
+    async def _collect_quantum_results(self, lk: int):
+        """
+        STEP 9: Collect results from worker nodes.
+        Alice waits for workers to write results to DHT.
+        """
         logger.info(
-            "step_16_17_complete",
-            valid_positions_count=len(valid_positions),
-            sift_ratio=len(valid_positions) / lk if lk > 0 else 0
+            "collecting_quantum_results_from_workers",
+            process_id=self.process_id,
+            lk=lk
         )
         
-        # ========== STEP 18-19: Alice riordina e genera chiave finale ==========
-        sifted_bits = [self.alice_bits_original[i] for i in valid_positions if i < len(self.alice_bits)]
+        self.alice_bits = []
+        self.alice_bases = []
         
-        if len(sifted_bits) < lc:
-            raise ValueError(
-                f"Bit insufficienti dopo sifting: "
-                f"richiesti {lc}, ottenuti {len(sifted_bits)}"
+        # Collect results with timeout
+        for i in range(lk):
+            # Wait for QSG result
+            qsg_result = await self._wait_for_result(
+                f"{self.process_id}:qsg_result:{i}",
+                timeout=30
             )
-        
-        final_key_bits = sifted_bits[:lc]
-        key_bytes = self.orchestrator.bits_to_bytes(final_key_bits)
+            self.alice_bits.append(qsg_result.get("spin", 0))
+            
+            # Wait for BG result (Alice's base)
+            bg_result = await self._wait_for_result(
+                f"{self.process_id}:bg_alice_result:{i}",
+                timeout=30
+            )
+            self.alice_bases.append(bg_result.get("base", "+"))
         
         logger.info(
-            "step_18_19_complete",
-            final_key_length_bits=len(final_key_bits),
-            final_key_length_bytes=len(key_bytes)
+            "quantum_results_collected",
+            process_id=self.process_id,
+            bits=len(self.alice_bits),
+            bases=len(self.alice_bases)
         )
+
+    async def _wait_for_result(
+        self, 
+        key: str, 
+        timeout: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Wait for a specific result to appear in DHT.
         
-        logger.info(
-            "alice_key_generation_complete_19steps",
-            process_id=process_id,
-            all_steps_executed=True
-        )
+        Args:
+            key: DHT key to wait for
+            timeout: Maximum seconds to wait
+            
+        Returns:
+            Result data from DHT
+        """
+        for attempt in range(timeout * 2):  # Poll every 0.5 seconds
+            result = await self.node.retrieve_data(key)
+            
+            if result:
+                return result
+            
+            await asyncio.sleep(0.5)
+            
+            if (attempt + 1) % 10 == 0:
+                logger.debug(
+                    "still_waiting_for_result",
+                    key=key,
+                    attempt=attempt + 1
+                )
         
-        return key_bytes
-    
+        raise TimeoutError(f"Timeout waiting for result: {key}")
+
     async def _execute_qsg_bg_qpp_chain(
         self,
         index: int,
@@ -270,30 +392,68 @@ class Alice:
             "qpm_node": qpm_node_id
         }
 
+    async def _wait_for_qpc_sifting(self) -> List[int]:
+        """
+        Wait for QPC to complete sifting (step 18).
+        
+        Returns:
+            List[int]: Valid bit positions where bases matched
+        """
+        logger.info("alice_waiting_for_qpc_sifting", process_id=self.process_id)
+        
+        for attempt in range(120):  # 1 minute timeout
+            # Try process-specific key
+            result = await self.node.retrieve_data(
+                f"{self.process_id}:qpc_sifting_result"
+            )
+            
+            if result and "valid_positions" in result:
+                logger.info(
+                    "alice_received_qpc_sifting",
+                    attempt=attempt,
+                    valid_positions=len(result["valid_positions"])
+                )
+                return result["valid_positions"]
+            
+            # Try latest key
+            result = await self.node.retrieve_data("latest_qpc_sifting_result")
+            if result and "valid_positions" in result:
+                if result.get("process_id") == self.process_id:
+                    return result["valid_positions"]
+            
+            await asyncio.sleep(0.5)
+            
+            if (attempt + 1) % 10 == 0:
+                logger.debug(
+                    "alice_still_waiting_qpc",
+                    attempt=attempt + 1
+                )
+        
+        raise TimeoutError("Timeout waiting for QPC sifting results")
+
     async def _notify_bob(
         self,
         process_id: str,
         lk: int,
         lc: int,
         sorting_rule: List[int],
-        qpm_addresses: List[str]
+        alice_bases: List[str],
+        allocation: dict
     ):
-        """STEP 11: Alice notifica Bob"""
-        import json  # ✅ Aggiungi import
-        
-        key = f"{process_id}:alice_to_bob:notification"
-        
-        # ✅ Serializza il dict in JSON string
+
         notification_data = {
-            "lk": lk,
+            "process_id": self.process_id,
             "lc": lc,
+            "lk": lk,
             "sorting_rule": sorting_rule,
-            "qpm_addresses": qpm_addresses,
-            "from": self.node.node_id,
-            "to": self.bob_address
+            "alice_bases": alice_bases,
+            "qpm_nodes": allocation.get(NodeRole.QPM, []),
+            "qpc_node": allocation.get(NodeRole.QPC, [None])[0],
+            "alice_node": self.node.node_id,
+            "timestamp": datetime.now().isoformat()
         }
-        
-        await self.node.store_data(key, json.dumps(notification_data))  # ✅ Converti in string
+        key = f"{process_id}:alice_to_bob"
+        await self.node.store_data(key, json.dumps(notification_data)) 
         
         logger.info("alice_notified_bob", process_id=process_id, lk=lk)
 

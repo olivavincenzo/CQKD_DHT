@@ -1,6 +1,6 @@
 import math
 import secrets
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 from core.dht_node import CQKDNode
 from core.node_states import NodeRole
 from quantum.bg import BaseGenerator
@@ -63,6 +63,34 @@ class QuantumPhotonMeter:
         bases_match = (alice_base == bob_base)
 
         return measured_bit, bases_match
+
+    @classmethod
+    def measure_batch(
+        cls,
+        polarizations: List[int],
+        bases: List[str]
+    ) -> List[Dict[str, Any]]:
+        """
+        Esegue misurazioni batch di polarizzazioni
+        
+        Args:
+            polarizations: Lista di polarizzazioni da Alice
+            bases: Lista di basi da Bob
+            
+        Returns:
+            List[Dict]: Lista di risultati misurazione
+        """
+        measurements = []
+        for i, (polarization, base) in enumerate(zip(polarizations, bases)):
+            measured_bit, bases_match = cls.measure(polarization, base)
+            measurements.append({
+                "index": i,
+                "bit": measured_bit,
+                "bases_match": bases_match,
+                "polarization": polarization,
+                "base": base
+            })
+        return measurements
 
     @classmethod
     async def execute(

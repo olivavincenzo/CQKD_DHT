@@ -38,7 +38,7 @@ async def main():
     try:
         # Attendi che Alice pubblichi il process_id sulla DHT
         logger.info(f"Bob in attesa del process_id sulla chiave DHT: '{PROCESS_ID_KEY}'...")
-        while process_id is None:
+        while process_id is None or process_id == "__DELETED__":
             process_id = await bob_node.retrieve_data(PROCESS_ID_KEY)
             if process_id is None:
                 await asyncio.sleep(2)

@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 from core.dht_node import CQKDNode
 from core.node_states import NodeRole
 from utils.logging_config import get_logger
-
+import json
 
 logger = get_logger(__name__)
 
@@ -112,13 +112,15 @@ class BaseGenerator:
 
         # Memorizza risultato per QPM
         key_to_qpm = f"{process_id}:bg:{operation_id}:to_qpm:{qpm_addr}"
-        await node.store_data(key_to_qpm, {
+
+        data= {
             "base": base,
             "angles": angles,
             "from_node": node.node_id,
             "operation_id": operation_id,
             "target_qpm": qpm_addr
-        })
+        }
+        await node.store_data(key_to_qpm , json.dumps(data))
 
         # Rilascia ruolo
         await node.release_role()
