@@ -83,16 +83,6 @@ class WorkerExecutor:
             cmd_key = f"cmd:{self.node.node_id}"
             command_data = await self.node.retrieve_data(cmd_key)
 
-            
-          
-            
-            if isinstance(command_data, str):
-                try:
-                    command_data = json.loads(command_data)
-                except json.JSONDecodeError:
-                    logger.warning(f"Invalid JSON in DHT command: {command_data}")
-                    command_data = None
-
             # ✅ Esegui solo se è un dict valido
             if command_data and isinstance(command_data, dict):
                 cmd_id = command_data.get('cmd_id')

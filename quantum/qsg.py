@@ -81,7 +81,7 @@ class QuantumSpinGenerator:
         )
 
         # Memorizza risultato per Alice
-        key_to_alice = f"{process_id}:qsg:{operation_id}:to_alice"
+        key_to_alice = f"{process_id}:qsg_result:{operation_id}"
         await node.store_data(key_to_alice, {
             "spin": spin,
             "from_node": node.node_id,
@@ -97,6 +97,8 @@ class QuantumSpinGenerator:
             "target_qpp": qpp_addr
         })
 
+
+  
         # Rilascia ruolo
         await node.release_role()
 

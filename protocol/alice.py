@@ -220,9 +220,11 @@ class Alice:
             qsg_nodes = allocation.get(NodeRole.QSG, [])
             bg_nodes = allocation.get(NodeRole.BG, [])
             qpp_nodes = allocation.get(NodeRole.QPP, [])
+
             
             # Dispatch commands to each worker node
             dispatch_tasks = []
+            role_assignment_tasks = []
             
             for i in range(lk):
                 # Command to QSG node
@@ -255,7 +257,7 @@ class Alice:
                     }
                 }
                 
-                # Send commands to workers via DHT
+                
                 
 
 
@@ -304,9 +306,12 @@ class Alice:
                 f"{self.process_id}:qsg_result:{i}",
                 timeout=30
             )
+
             self.alice_bits.append(qsg_result.get("spin", 0))
             
             # Wait for BG result (Alice's base)
+
+
             bg_result = await self._wait_for_result(
                 f"{self.process_id}:bg_alice_result:{i}",
                 timeout=30

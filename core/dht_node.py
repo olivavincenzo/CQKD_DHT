@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 from kademlia.network import Server
@@ -242,25 +243,24 @@ class CQKDNode:
             self.state = NodeState.ACTIVE
 
     async def store_data(self, key: str, value: Any):
-        """Memorizza dati nella DHT"""
+        """Memorizza dati nella DHT, serializzando se necessario."""
         try:
-            await self.server.set(key, value)
+            # Se il valore è un dizionario o una lista, serializzalo in JSON
+            if isinstance(value, (dict, list)):
+                value_to_store = json.dumps(value)
+            else:
+                value_to_store = value
+
+            await self.server.set(key, value_to_store)
             logger.debug("data_stored", node_id=self.node_id, key=key)
+            
         except ValueError as e:
             if "socket family mismatch" in str(e) or "DNS lookup is required" in str(e):
-                # Problema di hostname vs IP - rigenera la routing table con IP
                 logger.warning("dns_hostname_issue_detected", node_id=self.node_id, issue=str(e))
-                # Force refresh routing table se possibile
                 try:
-                    # Use the correct method on the server object, not the router
-                    logger.debug("attempting_routing_table_refresh", node_id=self.node_id)
-                    
-                    # Call refresh_table on the server object (not on the router)
                     self.server.refresh_table()
-                    
                     logger.info("routing_table_refresh_completed", node_id=self.node_id)
-                    # Riprova lo store
-                    await self.server.set(key, value)
+                    await self.server.set(key, value_to_store)
                     logger.info("data_stored_after_refresh", node_id=self.node_id, key=key)
                 except Exception as retry_e:
                     logger.error(
@@ -288,7 +288,7 @@ class CQKDNode:
             raise
         
     async def retrieve_data(self, key: str) -> Optional[Any]:
-        """Recupera dati dalla DHT"""
+        """Recupera dati dalla DHT, deserializzando se necessario."""
         try:
             value = await self.server.get(key)
             logger.debug(
@@ -297,7 +297,17 @@ class CQKDNode:
                 key=key,
                 found=value is not None
             )
+
+            if isinstance(value, str):
+                try:
+                    # Prova a deserializzare da JSON
+                    return json.loads(value)
+                except json.JSONDecodeError:
+                    # Se non è JSON valido, ritorna la stringa originale
+                    return value
+            
             return value
+
         except Exception as e:
             logger.error(
                 "data_retrieve_failed",

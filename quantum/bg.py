@@ -102,25 +102,31 @@ class BaseGenerator:
         )
 
         # Memorizza risultato per Bob
-        key_to_bob = f"{process_id}:bg:{operation_id}:to_bob"
-        await node.store_data(key_to_bob, {
+        key_to_bob = f"{process_id}:bg_bob_result:{operation_id}"
+        key_to_alice= f"{process_id}:bg_alice_result:{operation_id}"
+        key_to_qpm = f"{process_id}:bg:{operation_id}:to_qpm:{qpm_addr}"
+
+        await node.store_data(key_to_alice, {
             "base": base,
             "angles": angles,
             "from_node": node.node_id,
             "operation_id": operation_id
         })
 
-        # Memorizza risultato per QPM
-        key_to_qpm = f"{process_id}:bg:{operation_id}:to_qpm:{qpm_addr}"
-
-        data= {
+        await node.store_data(key_to_bob, {
+            "base": base,
+            "angles": angles,
+            "from_node": node.node_id,
+            "operation_id": operation_id
+        })
+        
+        await node.store_data(key_to_qpm , {
             "base": base,
             "angles": angles,
             "from_node": node.node_id,
             "operation_id": operation_id,
             "target_qpm": qpm_addr
-        }
-        await node.store_data(key_to_qpm , json.dumps(data))
+        })
 
         # Rilascia ruolo
         await node.release_role()
