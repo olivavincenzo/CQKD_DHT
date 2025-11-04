@@ -96,6 +96,7 @@ class QuantumSpinGenerator:
         # ✅ STEP 8-9: QSG invia spin A QPP
         # QPP leggerà questo dato quando eseguirà
         key_to_qpp = f"{process_id}:qsg_to_qpp:{operation_id}"
+        logger.info("qsg_sent_to_qpp", key_to_qpp=key_to_qpp)
         await node.store_data(key_to_qpp, {
             "spin": spin,
             "from_node": node.node_id,

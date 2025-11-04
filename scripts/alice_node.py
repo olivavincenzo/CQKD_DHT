@@ -9,7 +9,7 @@ setup_logging()
 logger = get_logger(__name__)
 
 PROCESS_ID_KEY = "cqkd_process_id"
-MIN_WORKERS_FOR_TEST = 10 # Numero minimo di worker prima di iniziare
+MIN_WORKERS_FOR_TEST = 15 # Numero minimo di worker prima di iniziare
 
 async def main():
     """
@@ -40,7 +40,8 @@ async def main():
             rt_info = alice_node.get_routing_table_info()
             num_nodes = rt_info.get("total_nodes", 0)
             if num_nodes >= MIN_WORKERS_FOR_TEST:
-                logger.info(f"✓ Rete pronta. Alice conosce {num_nodes} nodi.")
+                logger.info(f"✓ Rete pronta. Alice conosce {num_nodes} nodi. {rt_info.get("all_nodes", 0)}")
+
                 break
             logger.info(f"Attualmente {num_nodes}/{MIN_WORKERS_FOR_TEST} nodi noti. Attendo...")
             await asyncio.sleep(5)

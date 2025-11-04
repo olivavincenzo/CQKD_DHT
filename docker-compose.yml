@@ -62,7 +62,6 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    restart: unless-stopped
     deploy:
       resources:
         limits:

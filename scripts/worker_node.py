@@ -49,7 +49,7 @@ async def main():
 
             # aggiorna identificatore interno del nodo
             worker_node.node_id = real_node_id_str
-            logger.info(f"✓ Node ID DHT effettivo: {real_node_id_str}")
+            logger.info(f"✓ Node ID DHT effettivo: {worker_node.node_id}")
         else:
             logger.warning("⚠ Impossibile determinare il node_id reale della DHT")
 

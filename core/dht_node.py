@@ -28,7 +28,7 @@ class CQKDNode:
         capabilities: Optional[List[NodeRole]] = None
     ):
         self.port = port
-        self.node_id = node_id or self._generate_node_id()
+        self.node_id = node_id
         # Configurazione ottimizzata per alte scalabilità
         self.server = Server(ksize=settings.dht_ksize)  # Usa configurazione da settings
         self.state = NodeState.OFF
@@ -344,7 +344,7 @@ class CQKDNode:
 
     def get_routing_table_info(self) -> Dict[str, Any]:
         """
-        Ottieni informazioni dettagliate sulla routing table
+        Ottieni informazioni dettagliate sulla routing table, filtrando per i nodi sulla porta 7000.
 
         Returns:
             Dict con statistiche e dettagli nodi
@@ -359,7 +359,7 @@ class CQKDNode:
                 "bucket_capacity": self.server.ksize,
                 "buckets_detail": [],
                 "all_nodes": [],
-                "bucket_distribution": {},  # Nuovo: distribuzione nodi per bucket
+                "bucket_distribution": {},
                 "network_health": {
                     "well_distributed": False,
                     "single_bucket_overload": False,
@@ -368,9 +368,11 @@ class CQKDNode:
             }
 
             nodes_per_bucket = []
+            worker_port = 7000
 
             for i, bucket in enumerate(router.buckets):
-                nodes = bucket.get_nodes()
+                # Filtra solo i nodi che operano sulla porta specificata (es. 7000 per i worker)
+                nodes = [node for node in bucket.get_nodes() if node.port == worker_port]
                 nodes_count = len(nodes)
 
                 if nodes_count > 0:
@@ -396,22 +398,19 @@ class CQKDNode:
                     info["buckets_detail"].append(bucket_info)
                     info["bucket_distribution"][i] = nodes_count
 
-            # Calcola metriche di salute della rete
+            # Calcola metriche di salute della rete (basate sui nodi filtrati)
             if nodes_per_bucket:
                 max_nodes = max(nodes_per_bucket)
                 avg_nodes = sum(nodes_per_bucket) / len(nodes_per_bucket)
 
-                # Bucket overload detection
                 info["network_health"]["single_bucket_overload"] = max_nodes > self.server.ksize * 0.8
 
-                # Distribution score (0-1, 1 = perfetto)
                 if max_nodes > 0:
                     variance = sum((x - avg_nodes) ** 2 for x in nodes_per_bucket) / len(nodes_per_bucket)
                     info["network_health"]["distribution_score"] = max(0, 1 - (variance / (max_nodes ** 2)))
 
-                # Well distributed se abbiamo bucket in più intervalli e nessuno sovraccarico
                 info["network_health"]["well_distributed"] = (
-                    len(nodes_per_bucket) >= 3 and  # Almeno 3 bucket attivi
+                    len(nodes_per_bucket) >= 3 and
                     not info["network_health"]["single_bucket_overload"] and
                     info["network_health"]["distribution_score"] > 0.5
                 )

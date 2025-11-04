@@ -145,7 +145,7 @@ class QuantumPhotonPolarizer:
         Returns:
             dict: Dati recuperati
         """
-        for attempt in range(timeout * 2):
+        for attempt in range(timeout * 10):
             data = await node.retrieve_data(key)
             if data:
                 return data

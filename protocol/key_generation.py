@@ -8,6 +8,7 @@ from utils.logging_config import get_logger
 from discovery.discovery_strategies import SmartDiscoveryStrategy
 import os
 import math
+import datetime
 
 logger = get_logger(__name__)
 
@@ -262,7 +263,7 @@ class KeyGenerationOrchestrator:
         """
         logger.info(
             "stopping_orchestrator",
-            node_id=self.node.node_id if self.node else "standalone"
+            node_id=self.coordinator.node_id if self.coordinator else "standalone"
         )
         
         if self.smart_discovery and self._background_tasks_started:
@@ -271,18 +272,18 @@ class KeyGenerationOrchestrator:
                 self._background_tasks_started = False
                 logger.info(
                     "background_tasks_stopped",
-                    node_id=self.node.node_id if self.node else "standalone"
+                    node_id=self.coordinator.node_id if self.coordinator else "standalone"
                 )
             except Exception as e:
                 logger.error(
-                    "failed_to_stop_background_tasks",
-                    error=str(e),
-                    node_id=self.node.node_id if self.node else "standalone"
-                )
+                            "failed_to_stop_background_tasks",
+                            error=str(e),
+                            node_id=self.coordinator.node_id if self.coordinator else "standalone"
+                        )
         
         logger.info(
             "orchestrator_stopped",
-            node_id=self.node.node_id if self.node else "standalone"
+            node_id=self.coordinator.node_id if self.coordinator else "standalone"
         )
 
 
@@ -409,13 +410,13 @@ class KeyGenerationOrchestrator:
                 allocation_summary[role.value] = {
                     "count": len(nodes),
                     # Store only first 3 node IDs for verification
-                    "sample": [n[:16] for n in nodes[:3]] if nodes else []
+                    "sample": [str(n)[:16] for n in list(nodes)[:3]] if nodes else []
                 }
         
         completion_data = {
             "status": status,
-            "timestamp": datetime.now().isoformat(),
-            "orchestrator": self.node.node_id if self.node else "standalone",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "orchestrator": self.coordinator.node_id if self.coordinator else "standalone",
             "allocation_summary": allocation_summary  # Summary instead of full list
         }
         
@@ -423,9 +424,9 @@ class KeyGenerationOrchestrator:
             # Truncate error if too long
             completion_data["error"] = error_message[:500]
         
-        if self.node:
+        if self.coordinator:
             try:
-                await self.node.store_data(
+                await self.coordinator.store_data(
                     f"{self.process_id}:completion",
                     completion_data
                 )

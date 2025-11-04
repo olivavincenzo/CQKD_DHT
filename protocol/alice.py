@@ -133,7 +133,26 @@ class Alice:
             
             logger.info("waiting_for_bob_and_qpc")
             
+
+
+                
+            # ========== STEP 18: Invoca QPC per il sifting ==========
+            from quantum.qpc import QuantumPhotonCollider
+            
+            logger.info("step_18_invoking_qpc", process_id=self.process_id, lk=lk)
+            
+            await QuantumPhotonCollider.execute(
+                node=self.node,
+                process_id=self.process_id,
+                lk=lk,
+                alice_addr=self.node.node_id,
+                bob_addr=self.bob_address
+            )
+
+            logger.info("step_18_qpc_invoked") 
+
             # ========== STEP 18: Attendi QPC collision ==========
+
             valid_positions = await self._wait_for_qpc_sifting()
             
             logger.info(
@@ -142,6 +161,9 @@ class Alice:
                 sift_ratio=len(valid_positions) / lk if lk > 0 else 0
             )
             
+
+
+
             # ========== STEP 19: Alice ordina secondo sorting_rule e cancella bit errati ==========
             sifted_bits = [
                 self.alice_bits[i] for i in valid_positions
@@ -217,7 +239,16 @@ class Alice:
         bg_nodes = allocation.get(NodeRole.BG, [])
         qpp_nodes = allocation.get(NodeRole.QPP, [])
         qpm_nodes = allocation.get(NodeRole.QPM, [])
-        qpc_node = allocation.get(NodeRole.QPC, [None])[0]
+      
+        
+        logger.info(f"qsg_nodes: {qsg_nodes}")
+        logger.info(f"bg_nodes: {bg_nodes}")
+        logger.info(f"qpp_nodes: {qpp_nodes}")
+        logger.info(f"qpm_nodes: {qpm_nodes}")
+
+        
+
+
         
         dispatch_tasks = []
         
@@ -281,15 +312,21 @@ class Alice:
                 "params": {
                     "process_id": self.process_id,
                     "operation_id": i,
-                    "bob_addr": self.bob_address,
-                    "qpc_addr": qpc_node.get('id') if qpc_node else None
+                    "bob_addr": self.bob_address
                 }
             }
             
+
+            logger.info(f"[{i}] contatto questo nodo qsg: {qsg_node_id.get('id')}")
+            logger.info(f"[{i}] contatto questo nodo bg: {bg_node_id.get('id')}")
+            logger.info(f"[{i}] contatto questo nodo qpp: {qpp_node_id.get('id')}")
+            logger.info(f"[{i}] contatto questo nodo qpm: {qpm_node_id.get('id')}")
             dispatch_tasks.extend([
                 self.node.store_data(f"cmd:{qsg_node_id.get('id')}", json.dumps(qsg_cmd)),
                 self.node.store_data(f"cmd:{bg_node_id.get('id')}", json.dumps(bg_cmd)),
+
                 self.node.store_data(f"cmd:{qpp_node_id.get('id')}", json.dumps(qpp_cmd)),
+
                 self.node.store_data(f"cmd:{qpm_node_id.get('id')}", json.dumps(qpm_cmd))
             ])
         
@@ -339,6 +376,7 @@ class Alice:
             bits=len(self.alice_bits),
             bases=len(self.alice_bases)
         )
+
     
     async def _wait_for_result(
         self,
@@ -400,6 +438,7 @@ class Alice:
             "alice_bases": alice_bases,
             "qpm_nodes": allocation.get(NodeRole.QPM, []),
             "qpc_node": allocation.get(NodeRole.QPC, [None])[0],
+            "bg_nodes": allocation.get(NodeRole.BG, []), 
             "alice_node": self.node.node_id,
             "timestamp": datetime.datetime.now().isoformat()
         }

@@ -68,8 +68,7 @@ class QuantumPhotonMeter:
         node: CQKDNode,
         process_id: str,
         operation_id: str,
-        bob_addr: str,
-        qpc_addr: str
+        bob_addr: str
     ) -> Dict[str, Any]:
         """
         Esegue l'operazione QPM secondo il paper (Step 16-17).
@@ -150,7 +149,7 @@ class QuantumPhotonMeter:
             "from_node": node.node_id
         })
         
-        logger.info("qpm_sent_to_qpc", qpc_addr=qpc_addr, bases_match=bases_match)
+        logger.info("qpm_sent_to_qpc", bases_match=bases_match)
         
         # Rilascia ruolo
         await node.release_role()
@@ -173,7 +172,7 @@ class QuantumPhotonMeter:
         timeout: int = 60
     ) -> Dict[str, Any]:
         """Attende che un dato sia disponibile nella DHT."""
-        for attempt in range(timeout * 2):
+        for attempt in range(timeout * 10):
             data = await node.retrieve_data(key)
             if data:
                 return data
