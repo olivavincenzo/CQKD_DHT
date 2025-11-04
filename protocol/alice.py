@@ -546,13 +546,21 @@ async def get_network_status():
     try:
         routing_info = alice_node.get_routing_table_info()
 
+        # Extract nodes, sort by port, and format
+        nodes_list = routing_info.get("all_nodes", [])
+        
+        # Sort nodes by port in ascending order
+        sorted_nodes = sorted(nodes_list, key=lambda node: node.get("address", 0))
+        
+
+
         # Calcola statistiche aggiuntive
         total_capacity = routing_info.get("total_buckets", 0) * routing_info.get("bucket_capacity", 20)
         usage_percentage = (routing_info.get("total_nodes", 0) / total_capacity * 100) if total_capacity > 0 else 0
 
         status = {
             "node_id": alice_node.node_id,
-            "routing_table": routing_info,
+            "network_nodes": sorted_nodes, # New key for sorted and formatted nodes
             "network_metrics": {
                 "total_nodes": routing_info.get("total_nodes", 0),
                 "active_buckets": routing_info.get("active_buckets", 0),

@@ -372,7 +372,7 @@ class CQKDNode:
 
             for i, bucket in enumerate(router.buckets):
                 # Filtra solo i nodi che operano sulla porta specificata (es. 7000 per i worker)
-                nodes = [node for node in bucket.get_nodes() if node.port == worker_port]
+                nodes = [node for node in bucket.get_nodes() if node.port >= worker_port]
                 nodes_count = len(nodes)
 
                 if nodes_count > 0:

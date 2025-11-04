@@ -456,17 +456,20 @@ class KeyGenerationOrchestrator:
         Returns:
             bytes: Rappresentazione binaria
         """
+        # Crea una copia per evitare side effects
+        bits_copy = bits.copy()
+        
         # Pad to multiple of 8
-        while len(bits) % 8 != 0:
-            bits.append(0)
-
+        while len(bits_copy) % 8 != 0:
+            bits_copy.append(0)
+        
         byte_array = bytearray()
-        for i in range(0, len(bits), 8):
+        for i in range(0, len(bits_copy), 8):
             byte = 0
             for j in range(8):
-                byte = (byte << 1) | bits[i + j]
+                byte = (byte << 1) | bits_copy[i + j]
             byte_array.append(byte)
-
+        
         return bytes(byte_array)
     
 

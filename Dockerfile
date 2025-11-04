@@ -27,6 +27,8 @@ COPY --from=builder /install /install
 # Copia tutto il codice sorgente dell'applicazione
 COPY . .
 
+
+
 # Crea un utente non-root per maggiore sicurezza
 RUN useradd -m -u 1000 cqkduser
 

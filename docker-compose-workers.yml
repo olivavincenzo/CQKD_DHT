@@ -1,0 +1,2807 @@
+version: '3.8'
+services:
+  worker-1:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-1
+    environment:
+      - DHT_PORT=7000
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7000:7000/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7000)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-2:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-2
+    environment:
+      - DHT_PORT=7001
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7001:7001/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7001)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-3:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-3
+    environment:
+      - DHT_PORT=7002
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7002:7002/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7002)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-4:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-4
+    environment:
+      - DHT_PORT=7003
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7003:7003/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7003)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-5:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-5
+    environment:
+      - DHT_PORT=7004
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7004:7004/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7004)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-6:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-6
+    environment:
+      - DHT_PORT=7005
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7005:7005/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7005)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-7:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-7
+    environment:
+      - DHT_PORT=7006
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7006:7006/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7006)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-8:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-8
+    environment:
+      - DHT_PORT=7007
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7007:7007/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7007)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-9:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-9
+    environment:
+      - DHT_PORT=7008
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7008:7008/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7008)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-10:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-10
+    environment:
+      - DHT_PORT=7009
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7009:7009/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7009)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-11:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-11
+    environment:
+      - DHT_PORT=7010
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7010:7010/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7010)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-12:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-12
+    environment:
+      - DHT_PORT=7011
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7011:7011/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7011)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-13:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-13
+    environment:
+      - DHT_PORT=7012
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7012:7012/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7012)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-14:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-14
+    environment:
+      - DHT_PORT=7013
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7013:7013/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7013)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-15:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-15
+    environment:
+      - DHT_PORT=7014
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7014:7014/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7014)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-16:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-16
+    environment:
+      - DHT_PORT=7015
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7015:7015/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7015)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-17:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-17
+    environment:
+      - DHT_PORT=7016
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7016:7016/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7016)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-18:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-18
+    environment:
+      - DHT_PORT=7017
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7017:7017/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7017)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-19:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-19
+    environment:
+      - DHT_PORT=7018
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7018:7018/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7018)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-20:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-20
+    environment:
+      - DHT_PORT=7019
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7019:7019/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7019)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-21:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-21
+    environment:
+      - DHT_PORT=7020
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7020:7020/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7020)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-22:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-22
+    environment:
+      - DHT_PORT=7021
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7021:7021/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7021)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-23:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-23
+    environment:
+      - DHT_PORT=7022
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7022:7022/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7022)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-24:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-24
+    environment:
+      - DHT_PORT=7023
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7023:7023/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7023)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-25:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-25
+    environment:
+      - DHT_PORT=7024
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7024:7024/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7024)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-26:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-26
+    environment:
+      - DHT_PORT=7025
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7025:7025/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7025)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-27:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-27
+    environment:
+      - DHT_PORT=7026
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7026:7026/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7026)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-28:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-28
+    environment:
+      - DHT_PORT=7027
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7027:7027/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7027)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-29:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-29
+    environment:
+      - DHT_PORT=7028
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7028:7028/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7028)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-30:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-30
+    environment:
+      - DHT_PORT=7029
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7029:7029/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7029)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-31:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-31
+    environment:
+      - DHT_PORT=7030
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7030:7030/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7030)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-32:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-32
+    environment:
+      - DHT_PORT=7031
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7031:7031/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7031)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-33:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-33
+    environment:
+      - DHT_PORT=7032
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7032:7032/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7032)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-34:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-34
+    environment:
+      - DHT_PORT=7033
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7033:7033/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7033)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-35:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-35
+    environment:
+      - DHT_PORT=7034
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7034:7034/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7034)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-36:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-36
+    environment:
+      - DHT_PORT=7035
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7035:7035/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7035)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-37:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-37
+    environment:
+      - DHT_PORT=7036
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7036:7036/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7036)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-38:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-38
+    environment:
+      - DHT_PORT=7037
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7037:7037/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7037)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-39:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-39
+    environment:
+      - DHT_PORT=7038
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7038:7038/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7038)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-40:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-40
+    environment:
+      - DHT_PORT=7039
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7039:7039/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7039)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-41:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-41
+    environment:
+      - DHT_PORT=7040
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7040:7040/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7040)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-42:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-42
+    environment:
+      - DHT_PORT=7041
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7041:7041/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7041)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-43:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-43
+    environment:
+      - DHT_PORT=7042
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7042:7042/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7042)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-44:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-44
+    environment:
+      - DHT_PORT=7043
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7043:7043/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7043)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-45:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-45
+    environment:
+      - DHT_PORT=7044
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7044:7044/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7044)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-46:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-46
+    environment:
+      - DHT_PORT=7045
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7045:7045/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7045)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-47:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-47
+    environment:
+      - DHT_PORT=7046
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7046:7046/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7046)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-48:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-48
+    environment:
+      - DHT_PORT=7047
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7047:7047/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7047)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-49:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-49
+    environment:
+      - DHT_PORT=7048
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7048:7048/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7048)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-50:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-50
+    environment:
+      - DHT_PORT=7049
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7049:7049/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7049)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-51:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-51
+    environment:
+      - DHT_PORT=7050
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7050:7050/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7050)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-52:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-52
+    environment:
+      - DHT_PORT=7051
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7051:7051/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7051)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-53:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-53
+    environment:
+      - DHT_PORT=7052
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7052:7052/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7052)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-54:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-54
+    environment:
+      - DHT_PORT=7053
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7053:7053/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7053)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-55:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-55
+    environment:
+      - DHT_PORT=7054
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7054:7054/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7054)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-56:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-56
+    environment:
+      - DHT_PORT=7055
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7055:7055/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7055)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-57:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-57
+    environment:
+      - DHT_PORT=7056
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7056:7056/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7056)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-58:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-58
+    environment:
+      - DHT_PORT=7057
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7057:7057/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7057)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-59:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-59
+    environment:
+      - DHT_PORT=7058
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7058:7058/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7058)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-60:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-60
+    environment:
+      - DHT_PORT=7059
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7059:7059/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7059)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-61:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-61
+    environment:
+      - DHT_PORT=7060
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7060:7060/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7060)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-62:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-62
+    environment:
+      - DHT_PORT=7061
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7061:7061/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7061)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-63:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-63
+    environment:
+      - DHT_PORT=7062
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7062:7062/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7062)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-64:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-64
+    environment:
+      - DHT_PORT=7063
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7063:7063/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7063)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-65:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-65
+    environment:
+      - DHT_PORT=7064
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7064:7064/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7064)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-66:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-66
+    environment:
+      - DHT_PORT=7065
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7065:7065/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7065)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-67:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-67
+    environment:
+      - DHT_PORT=7066
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7066:7066/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7066)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-68:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-68
+    environment:
+      - DHT_PORT=7067
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7067:7067/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7067)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-69:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-69
+    environment:
+      - DHT_PORT=7068
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7068:7068/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7068)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-70:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-70
+    environment:
+      - DHT_PORT=7069
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7069:7069/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7069)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-71:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-71
+    environment:
+      - DHT_PORT=7070
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7070:7070/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7070)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-72:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-72
+    environment:
+      - DHT_PORT=7071
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7071:7071/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7071)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-73:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-73
+    environment:
+      - DHT_PORT=7072
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7072:7072/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7072)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-74:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-74
+    environment:
+      - DHT_PORT=7073
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7073:7073/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7073)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-75:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-75
+    environment:
+      - DHT_PORT=7074
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7074:7074/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7074)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-76:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-76
+    environment:
+      - DHT_PORT=7075
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7075:7075/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7075)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-77:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-77
+    environment:
+      - DHT_PORT=7076
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7076:7076/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7076)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-78:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-78
+    environment:
+      - DHT_PORT=7077
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7077:7077/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7077)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-79:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-79
+    environment:
+      - DHT_PORT=7078
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7078:7078/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7078)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-80:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-80
+    environment:
+      - DHT_PORT=7079
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7079:7079/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7079)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-81:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-81
+    environment:
+      - DHT_PORT=7080
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7080:7080/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7080)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-82:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-82
+    environment:
+      - DHT_PORT=7081
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7081:7081/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7081)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-83:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-83
+    environment:
+      - DHT_PORT=7082
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7082:7082/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7082)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-84:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-84
+    environment:
+      - DHT_PORT=7083
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7083:7083/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7083)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-85:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-85
+    environment:
+      - DHT_PORT=7084
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7084:7084/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7084)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-86:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-86
+    environment:
+      - DHT_PORT=7085
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7085:7085/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7085)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-87:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-87
+    environment:
+      - DHT_PORT=7086
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7086:7086/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7086)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-88:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-88
+    environment:
+      - DHT_PORT=7087
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7087:7087/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7087)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-89:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-89
+    environment:
+      - DHT_PORT=7088
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7088:7088/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7088)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-90:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-90
+    environment:
+      - DHT_PORT=7089
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7089:7089/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7089)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-91:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-91
+    environment:
+      - DHT_PORT=7090
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7090:7090/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7090)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-92:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-92
+    environment:
+      - DHT_PORT=7091
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7091:7091/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7091)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-93:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-93
+    environment:
+      - DHT_PORT=7092
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7092:7092/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7092)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-94:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-94
+    environment:
+      - DHT_PORT=7093
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7093:7093/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7093)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-95:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-95
+    environment:
+      - DHT_PORT=7094
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7094:7094/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7094)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-96:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-96
+    environment:
+      - DHT_PORT=7095
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7095:7095/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7095)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-97:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-97
+    environment:
+      - DHT_PORT=7096
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7096:7096/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7096)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-98:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-98
+    environment:
+      - DHT_PORT=7097
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7097:7097/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7097)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-99:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-99
+    environment:
+      - DHT_PORT=7098
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7098:7098/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7098)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+  worker-100:
+    image: cqkd-dht-node:latest
+    container_name: cqkd_dht-worker-100
+    environment:
+      - DHT_PORT=7099
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "7099:7099/udp"
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["python", "-m", "scripts.worker_node"]
+    healthcheck:  # ← NUOVO: Health check UDP
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7099)); s.close()\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+networks:
+  cqkd-network:
+    external: true
+    name: cqkd_dht_cqkd-network # This assumes the network name is projectname_cqkd-network
