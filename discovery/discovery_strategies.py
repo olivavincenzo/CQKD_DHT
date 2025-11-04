@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict
 from datetime import datetime, timedelta
 
 from core.dht_node import CQKDNode
@@ -7,7 +7,9 @@ from core.node_states import NodeRole, NodeInfo
 from discovery.node_cache import NodeCache
 from discovery.node_discovery import NodeDiscoveryService
 from discovery.random_walk import RandomWalkExplorer
+from discovery.health_check_manager import HealthCheckManager
 from utils.logging_config import get_logger
+from config import settings
 
 
 logger = get_logger(__name__)
@@ -32,6 +34,7 @@ class SmartDiscoveryStrategy:
         self.cache = NodeCache() if enable_cache else None
         self.discovery = NodeDiscoveryService(coordinator_node)
         self.random_walk = RandomWalkExplorer(coordinator_node) if enable_random_walk else None
+        self.health_check = HealthCheckManager(coordinator_node, self.cache) if settings.enable_health_check else None
         
         # Background tasks
         self._refresh_task: Optional[asyncio.Task] = None
@@ -42,6 +45,10 @@ class SmartDiscoveryStrategy:
         if self.cache:
             self._refresh_task = asyncio.create_task(self._periodic_refresh())
             self._cleanup_task = asyncio.create_task(self._periodic_cleanup())
+        
+        # Avvia health check se abilitato
+        if self.health_check:
+            self.health_check.start_background_tasks()
             
             logger.info("smart_discovery_background_tasks_started")
     
@@ -52,6 +59,10 @@ class SmartDiscoveryStrategy:
         if self._cleanup_task:
             self._cleanup_task.cancel()
         
+        # Ferma health check se abilitato
+        if self.health_check:
+            await self.health_check.stop_background_tasks()
+        
         logger.info("smart_discovery_background_tasks_stopped")
     
     async def discover_nodes(
@@ -59,7 +70,7 @@ class SmartDiscoveryStrategy:
         required_count: int,
         required_capabilities: Optional[List[NodeRole]] = None,
         prefer_distributed: bool = True,
-        max_discovery_time: int = 90  # Aumentato timeout per reti grandi
+        max_discovery_time: Optional[int] = None  # Sarà calcolato adattivamente
     ) -> List[str]:
         """
         Scopre nodi con strategia ottimizzata e robusta
@@ -82,6 +93,32 @@ class SmartDiscoveryStrategy:
         """
         start_time = datetime.now()
         discovered_node_ids = []
+        
+        # Calcola timeout adattivo se non specificato
+        if max_discovery_time is None:
+            # Ottieni dimensione della rete per calcolo adattivo
+            try:
+                routing_info = self.coordinator.get_routing_table_info()
+                network_size = routing_info.get("total_nodes", 0)
+                
+                # Usa parametri adattivi dalla configurazione
+                adaptive_params = settings.calculate_adaptive_kademlia_params(network_size)
+                max_discovery_time = adaptive_params['discovery_timeout']
+                
+                logger.info(
+                    "adaptive_discovery_timeout_calculated",
+                    network_size=network_size,
+                    network_category=adaptive_params.get('network_category', 'unknown'),
+                    timeout=max_discovery_time
+                )
+            except Exception as e:
+                logger.warning(
+                    "failed_to_calculate_adaptive_timeout",
+                    error=str(e),
+                    using_default=True
+                )
+                max_discovery_time = settings.max_discovery_time
+        
         discovery_deadline = start_time + timedelta(seconds=max_discovery_time)
         
         logger.info(
@@ -89,7 +126,8 @@ class SmartDiscoveryStrategy:
             required_count=required_count,
             capabilities=required_capabilities,
             prefer_distributed=prefer_distributed,
-            max_discovery_time=max_discovery_time
+            max_discovery_time=max_discovery_time,
+            adaptive_enabled=settings.enable_adaptive_kademlia
         )
         
         # NUOVO: Analizza lo stato della rete all'inizio
@@ -106,17 +144,24 @@ class SmartDiscoveryStrategy:
                 active_buckets=routing_info.get("active_buckets", 0)
             )
             
-            # Se la rete è in cattivo stato, aumenta il timeout
+            # Se la rete è in cattivo stato, aumenta il timeout adattivamente
             if (total_nodes < required_count):
                 
+                # Calcola estensione adattiva basata sulla dimensione della rete
+                adaptive_params = settings.calculate_adaptive_kademlia_params(total_nodes)
+                base_extension = int(adaptive_params['query_timeout'] * 3)  # 3x il timeout di query
+                
                 # Estendi il timeout per reti in cattivo stato
-                additional_time = min(60, max_discovery_time // 2)
+                additional_time = min(base_extension, max_discovery_time // 2)
                 discovery_deadline += timedelta(seconds=additional_time)
                 
                 logger.info(
                     "poor_network_detected_extending_timeout",
+                    total_nodes=total_nodes,
+                    network_category=adaptive_params.get('network_category', 'unknown'),
                     additional_time=additional_time,
-                    new_deadline=discovery_deadline
+                    new_deadline=discovery_deadline,
+                    extended_timeout_seconds=(discovery_deadline - start_time).total_seconds()
                 )
                 
         except Exception as e:
@@ -184,11 +229,26 @@ class SmartDiscoveryStrategy:
         remaining = required_count - len(discovered_node_ids)
         if remaining > 0 and prefer_distributed and self.random_walk and datetime.now() < discovery_deadline:
             time_remaining = (discovery_deadline - datetime.now()).total_seconds()
-            walk_timeout = max(20, min(time_remaining * 0.7, 45))  # 70% del tempo rimanente
             
-            # Calcola parametri adattivi per random walk
-            walks_needed = max(min(remaining // 15, 25), 8)  # Aumentato per reti difficili
-            k_per_walk = min(120, max(25, remaining // walks_needed))  # Più aggressivo
+            # Calcola timeout adattivo per random walk basato sui parametri correnti
+            current_params = self.discovery._get_current_parameters()
+            base_walk_timeout = current_params['query_timeout'] * 4  # 4x il timeout di query
+            walk_timeout = max(base_walk_timeout, min(time_remaining * 0.7, 60))
+            
+            # Calcola parametri adattivi per random walk basati sulla dimensione della rete
+            network_size = current_params['network_size']
+            if network_size <= settings.small_network_threshold:
+                walks_needed = max(min(remaining // 10, 15), 5)
+                k_per_walk = min(60, max(20, remaining // walks_needed))
+            elif network_size <= settings.medium_network_threshold:
+                walks_needed = max(min(remaining // 12, 20), 6)
+                k_per_walk = min(80, max(25, remaining // walks_needed))
+            elif network_size <= settings.large_network_threshold:
+                walks_needed = max(min(remaining // 15, 25), 8)
+                k_per_walk = min(100, max(30, remaining // walks_needed))
+            else:
+                walks_needed = max(min(remaining // 20, 30), 10)
+                k_per_walk = min(120, max(40, remaining // walks_needed))
 
             try:
                 logger.info(
@@ -249,13 +309,20 @@ class SmartDiscoveryStrategy:
             )
             
             try:
+                # Calcola timeout adattivo per fallback
+                current_params = self.discovery._get_current_parameters()
+                fallback_timeout = min(
+                    current_params['query_timeout'] * 3,
+                    settings.max_query_timeout
+                )
+                
                 # Prova discovery senza filtri e con parametri massimi
                 fallback_result = await asyncio.wait_for(
                     self.discovery.discover_nodes_for_roles(
                         required_count=remaining * 3,  # Massimo sforzo
                         required_capabilities=None  # Senza filtri
                     ),
-                    timeout=30.0
+                    timeout=fallback_timeout
                 )
                 
                 fallback_nodes = fallback_result.discovered_nodes
@@ -327,10 +394,13 @@ class SmartDiscoveryStrategy:
                     nodes_count=len(nodes_to_refresh)
                 )
                 
-                # Verifica disponibilità dei nodi
-                for node in nodes_to_refresh:
-                    # is_available = await self._ping_node(node)
-                    self.cache.update_verification(node.node_id, True)
+                # Verifica disponibilità dei nodi con health check manager
+                if self.health_check:
+                    # Usa il health check manager per verifica batch
+                    await self._batch_verify_nodes(nodes_to_refresh)
+                else:
+                    # Fallback: verifica manuale con timeout appropriati
+                    await self._manual_verify_nodes(nodes_to_refresh)
                 
                 logger.info(
                     "periodic_refresh_complete",
@@ -361,11 +431,79 @@ class SmartDiscoveryStrategy:
             except Exception as e:
                 logger.error("cache_cleanup_error", error=str(e))
     
-    async def _ping_node(self, node: NodeInfo) -> bool:
-        """Ping un nodo per verificare disponibilità"""
+    async def _batch_verify_nodes(self, nodes: List[NodeInfo]):
+        """Verifica disponibilità nodi usando health check manager"""
+        try:
+            params = settings.calculate_health_check_params(len(nodes))
+            
+            # Esegui verifica batch con timeout appropriati
+            from discovery.health_check_manager import HealthCheckLevel
+            
+            # Usa fast check per refresh periodico
+            results = await self.health_check._execute_batch_health_check(
+                nodes,
+                HealthCheckLevel.FAST,
+                params['fast_timeout'],
+                params['batch_size']
+            )
+            
+            # Aggiorna cache basandosi sui risultati
+            for result in results:
+                self.cache.update_verification(result.node_id, result.success)
+            
+            logger.info(
+                "batch_node_verification_completed",
+                total_nodes=len(nodes),
+                successful=sum(1 for r in results if r.success),
+                failed=sum(1 for r in results if not r.success)
+            )
+            
+        except Exception as e:
+            logger.error("batch_node_verification_failed", error=str(e))
+            # Fallback a verifica manuale
+            await self._manual_verify_nodes(nodes)
+    
+    async def _manual_verify_nodes(self, nodes: List[NodeInfo]):
+        """Verifica manuale dei nodi con timeout appropriati"""
+        params = settings.calculate_health_check_params(len(nodes))
+        timeout = params['fast_timeout']
+        
+        # Esegui verifica in parallelo con limite di concorrenza
+        semaphore = asyncio.Semaphore(params['concurrent_batches'])
+        
+        async def verify_single_node(node: NodeInfo) -> Tuple[str, bool]:
+            async with semaphore:
+                return node.node_id, await self._ping_node(node, timeout)
+        
+        tasks = [verify_single_node(node) for node in nodes]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Processa risultati
+        successful = 0
+        for result in results:
+            if isinstance(result, tuple) and len(result) == 2:
+                node_id, is_available = result
+                self.cache.update_verification(node_id, is_available)
+                if is_available:
+                    successful += 1
+        
+        logger.info(
+            "manual_node_verification_completed",
+            total_nodes=len(nodes),
+            successful=successful,
+            failed=len(nodes) - successful
+        )
+    
+    async def _ping_node(self, node: NodeInfo, timeout: Optional[float] = None) -> bool:
+        """Ping un nodo per verificare disponibilità con timeout configurabile"""
         try:
             from kademlia.node import Node
             import binascii
+            
+            # Usa timeout appropriato se non specificato
+            if timeout is None:
+                params = settings.calculate_health_check_params(0)
+                timeout = params['fast_timeout']
             
             kad_node = Node(
                 binascii.unhexlify(node.node_id),
@@ -373,14 +511,45 @@ class SmartDiscoveryStrategy:
                 node.port
             )
             
-            # ✅ CORRETTO: usa callPing con un solo parametro
+            # ✅ CORRETTO: usa callPing con timeout appropriato
             result = await asyncio.wait_for(
                 self.coordinator.server.protocol.callPing(kad_node),
-                timeout=2.0
+                timeout=timeout
             )
             
             return result is not None
             
-        except Exception:
+        except Exception as e:
+            logger.debug(
+                "ping_node_failed",
+                node_id=node.node_id[:16],
+                timeout=timeout,
+                error=str(e)
+            )
             return False
+    
+    def get_health_stats(self) -> Dict:
+        """Ottieni statistiche del health check"""
+        if self.health_check:
+            return self.health_check.get_stats()
+        return {"enabled": False}
+    
+    def get_node_health_status(self, node_id: str) -> Optional[Dict]:
+        """Ottieni stato di salute di un nodo specifico"""
+        if self.health_check:
+            status = self.health_check.get_health_status(node_id)
+            if status:
+                return {
+                    "node_id": status.node_id,
+                    "consecutive_failures": status.consecutive_failures,
+                    "last_success": status.last_success.isoformat() if status.last_success else None,
+                    "last_failure": status.last_failure.isoformat() if status.last_failure else None,
+                    "last_check": status.last_check.isoformat() if status.last_check else None,
+                    "last_level": status.last_level.value,
+                    "availability_score": status.availability_score,
+                    "is_critical": status.is_critical,
+                    "total_checks": status.total_checks,
+                    "successful_checks": status.successful_checks
+                }
+        return None
 

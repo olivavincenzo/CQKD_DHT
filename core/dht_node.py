@@ -342,9 +342,13 @@ class CQKDNode:
         logger.info("node_stopped", node_id=self.node_id)
 
 
-    def get_routing_table_info(self) -> Dict[str, Any]:
+    def get_routing_table_info(self, min_port: int = 7000) -> Dict[str, Any]:
         """
-        Ottieni informazioni dettagliate sulla routing table, filtrando per i nodi sulla porta 7000.
+        Ottieni informazioni dettagliate sulla routing table, filtrando per i nodi
+        con porte a partire da min_port (default 7000 per includere solo worker).
+
+        Args:
+            min_port: Porta minima per includere i nodi nell'analisi
 
         Returns:
             Dict con statistiche e dettagli nodi
@@ -364,15 +368,16 @@ class CQKDNode:
                     "well_distributed": False,
                     "single_bucket_overload": False,
                     "distribution_score": 0.0
-                }
+                },
+                "port_distribution": {},
+                "min_port_filter": min_port
             }
 
             nodes_per_bucket = []
-            worker_port = 7000
 
             for i, bucket in enumerate(router.buckets):
-                # Filtra solo i nodi che operano sulla porta specificata (es. 7000 per i worker)
-                nodes = [node for node in bucket.get_nodes() if node.port == worker_port]
+                # Filtra i nodi con porte >= min_port (default 7000 per includere solo worker)
+                nodes = [node for node in bucket.get_nodes() if node.port >= min_port]
                 nodes_count = len(nodes)
 
                 if nodes_count > 0:
@@ -394,6 +399,12 @@ class CQKDNode:
                         }
                         bucket_info["nodes"].append(node_data)
                         info["all_nodes"].append(node_data)
+                        
+                        # Traccia la distribuzione delle porte
+                        port = node.port
+                        if port not in info["port_distribution"]:
+                            info["port_distribution"][port] = 0
+                        info["port_distribution"][port] += 1
 
                     info["buckets_detail"].append(bucket_info)
                     info["bucket_distribution"][i] = nodes_count

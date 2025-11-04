@@ -7,6 +7,7 @@ import secrets
 from core.dht_node import CQKDNode
 from core.node_states import NodeState, NodeRole, NodeInfo
 from utils.logging_config import get_logger
+from config import settings
 
 
 logger = get_logger(__name__)
@@ -29,7 +30,7 @@ class NodeDiscoveryService:
     nodi disponibili nella rete distribuita.
     """
     
-    # Parametri Kademlia standard
+    # Parametri Kademlia standard (valori default, verranno sovrascritti da parametri adattivi)
     ALPHA = 3  # Parallelism factor per query concorrenti
     K = 20     # Numero di nodi più vicini da trovare
     
@@ -37,10 +38,88 @@ class NodeDiscoveryService:
     QUERY_TIMEOUT = 5.0  # Timeout per singola query RPC
     MAX_RETRIES = 3      # Tentativi massimi per nodo non responsivo
     
+    # Cache per parametri adattivi
+    _cached_params: Optional[Dict[str, Any]] = None
+    _params_cache_time: Optional[datetime] = None
+    _params_cache_ttl: timedelta = timedelta(minutes=5)  # Cache parametri per 5 minuti
+    
     def __init__(self, coordinator_node: CQKDNode):
         self.coordinator = coordinator_node
         self._queried_nodes: Set[str] = set()
         self._active_queries: Dict[str, asyncio.Task] = {}
+        
+        # Inizializza parametri adattivi
+        self._update_adaptive_parameters()
+    
+    def _update_adaptive_parameters(self) -> None:
+        """
+        Aggiorna i parametri Kademlia basati sulla dimensione attuale della rete
+        """
+        try:
+            # Ottieni dimensione della rete dalla routing table
+            routing_info = self.coordinator.get_routing_table_info()
+            network_size = routing_info.get("total_nodes", 0)
+            
+            # Se non possiamo determinare la dimensione, usa una stima conservativa
+            if network_size == 0:
+                network_size = settings.small_network_threshold
+            
+            # Calcola parametri adattivi
+            adaptive_params = settings.calculate_adaptive_kademlia_params(network_size)
+            
+            # Aggiorna i parametri della classe
+            self.ALPHA = adaptive_params['alpha']
+            self.K = adaptive_params['k']
+            self.QUERY_TIMEOUT = adaptive_params['query_timeout']
+            
+            # Log dei parametri aggiornati
+            logger.info(
+                "adaptive_kademlia_params_updated",
+                network_size=network_size,
+                network_category=adaptive_params.get('network_category', 'unknown'),
+                alpha=self.ALPHA,
+                k=self.K,
+                query_timeout=self.QUERY_TIMEOUT,
+                adaptive_enabled=adaptive_params.get('adaptive_enabled', False)
+            )
+            
+            # Cache dei parametri
+            self._cached_params = adaptive_params
+            self._params_cache_time = datetime.now()
+            
+        except Exception as e:
+            logger.warning(
+                "failed_to_update_adaptive_parameters",
+                error=str(e),
+                using_defaults=True
+            )
+            # Usa parametri di default in caso di errore
+            self.ALPHA = settings.base_alpha
+            self.K = settings.base_k
+            self.QUERY_TIMEOUT = settings.base_query_timeout
+    
+    def _get_current_parameters(self) -> Dict[str, Any]:
+        """
+        Ottiene i parametri correnti, aggiornandoli se necessario
+        
+        Returns:
+            Dict con i parametri attuali
+        """
+        now = datetime.now()
+        
+        # Verifica se la cache è scaduta o non esiste
+        if (self._params_cache_time is None or
+            now - self._params_cache_time > self._params_cache_ttl):
+            self._update_adaptive_parameters()
+        
+        return {
+            'alpha': self.ALPHA,
+            'k': self.K,
+            'query_timeout': self.QUERY_TIMEOUT,
+            'network_size': self._cached_params.get('network_size', 0) if self._cached_params else 0,
+            'network_category': self._cached_params.get('network_category', 'unknown') if self._cached_params else 'unknown',
+            'adaptive_enabled': settings.enable_adaptive_kademlia
+        }
         
     async def discover_nodes_for_roles(
         self,
@@ -59,10 +138,14 @@ class NodeDiscoveryService:
         """
         start_time = datetime.now()
         
+        # Aggiorna parametri adattivi prima di iniziare
+        current_params = self._get_current_parameters()
+        
         logger.info(
             "node_discovery_start",
             required_count=required_count,
-            capabilities=required_capabilities
+            capabilities=required_capabilities,
+            current_params=current_params
         )
         
         # Step 1: Esegui iterativeFindNode per trovare nodi vicini
@@ -80,9 +163,12 @@ class NodeDiscoveryService:
             filtered_nodes = all_nodes
         
 
-        # Step 3: Verifica stato e disponibilità
-        # available_nodes = await self._verify_node_availability(filtered_nodes)  # ❌ COMMENTATO
-        available_nodes = filtered_nodes  # ✅ Usa direttamente i nodi trovati
+        # Step 3: Verifica stato e disponibilità con health check
+        if settings.enable_health_check:
+            available_nodes = await self._verify_node_availability(filtered_nodes)
+        else:
+            # Fallback: usa direttamente i nodi trovati
+            available_nodes = filtered_nodes
 
         
         duration = (datetime.now() - start_time).total_seconds()
@@ -271,12 +357,17 @@ class NodeDiscoveryService:
                 logger.warning("no_initial_peers_for_crawl")
                 return []
             
+            # Ottieni parametri correnti per il logging
+            current_params = self._get_current_parameters()
+            
             logger.debug(
                 "starting_node_spider_crawl",
                 initial_peers=len(initial_peers),
                 dht_nodes=len(dht_nodes) if dht_nodes else 0,
                 ksize=self.K,
-                alpha=self.ALPHA
+                alpha=self.ALPHA,
+                network_category=current_params['network_category'],
+                adaptive_enabled=current_params['adaptive_enabled']
             )
             
             # Crea e esegui NodeSpiderCrawl
@@ -651,10 +742,13 @@ class NodeDiscoveryService:
             List: Nodi trovati
         """
         try:
-            # Usa callFindNode nativo della libreria Kademlia
+            # Usa callFindNode nativo della libreria Kademlia con timeout adattivo
+            current_params = self._get_current_parameters()
+            timeout = current_params['query_timeout']
+            
             result = await asyncio.wait_for(
                 self.coordinator.server.protocol.callFindNode(target_node, target_bytes),
-                timeout=self.QUERY_TIMEOUT
+                timeout=timeout
             )
             
             # Marca il nodo come interrogato
@@ -692,13 +786,17 @@ class NodeDiscoveryService:
         )
         
         try:
-            # Usa parametri più aggressivi
+            # Usa parametri più aggressivi basati su quelli correnti
             original_alpha = self.ALPHA
             original_k = self.K
+            current_params = self._get_current_parameters()
             
-            # Aumenta parallelismo e numero di nodi da cercare
-            self.ALPHA = min(6, original_alpha * 2)  # Più query parallele
-            self.K = max(target_count * 3, 40)       # Più nodi da trovare
+            # Aumenta parallelismo e numero di nodi da cercare in modo adattivo
+            max_aggressive_alpha = min(settings.max_alpha, original_alpha * 2)
+            max_aggressive_k = min(settings.max_k, max(target_count * 3, original_k * 2))
+            
+            self.ALPHA = max_aggressive_alpha
+            self.K = max_aggressive_k
             
             logger.debug(
                 "aggressive_params_set",
@@ -738,10 +836,15 @@ class NodeDiscoveryService:
                 alpha=self.ALPHA
             )
             
-            # Esegui la ricerca con timeout più lungo
+            # Esegui la ricerca con timeout adattivo più lungo
+            aggressive_timeout = min(
+                current_params['query_timeout'] * 2,
+                settings.max_query_timeout
+            )
+            
             found_nodes = await asyncio.wait_for(
                 spider.find(),
-                timeout=15.0  # Timeout più lungo per retry aggressivo
+                timeout=aggressive_timeout
             )
             
             # Ripristina parametri originali
@@ -967,19 +1070,75 @@ class NodeDiscoveryService:
         nodes: List[NodeInfo]
     ) -> List[NodeInfo]:
         """
-        Verifica che i nodi siano effettivamente disponibili
+        Verifica che i nodi siano effettivamente disponibili usando health check
         
-        NOTA: Per ora ritorniamo tutti i nodi senza verificare,
-        poiché il ping causa errori di serializzazione RPC
+        Ora che abbiamo un health check robusto, possiamo verificare i nodi
         """
+        if not nodes:
+            return []
+        
         logger.info(
-            "node_availability_skipped",
-            total=len(nodes),
-            message="Returning all nodes without ping verification"
+            "node_availability_check_started",
+            total=len(nodes)
         )
         
-        # ✅ Ritorna tutti i nodi senza fare ping
-        return nodes
+        try:
+            # Usa parametri di health check adattivi
+            params = settings.calculate_health_check_params(len(nodes))
+            
+            # Esegui verifica batch con fast check
+            from discovery.health_check_manager import HealthCheckManager, HealthCheckLevel
+            
+            # Crea health check manager temporaneo se non disponibile
+            health_check = HealthCheckManager(self.coordinator)
+            
+            # Esegui verifica batch
+            results = await health_check._execute_batch_health_check(
+                nodes,
+                HealthCheckLevel.FAST,
+                params['fast_timeout'],
+                params['batch_size']
+            )
+            
+            # Filtra solo nodi disponibili
+            available_nodes = []
+            failed_nodes = []
+            
+            for result in results:
+                if result.success:
+                    # Trova il nodo corrispondente
+                    for node in nodes:
+                        if node.node_id == result.node_id:
+                            available_nodes.append(node)
+                            break
+                else:
+                    failed_nodes.append(result.node_id)
+            
+            logger.info(
+                "node_availability_check_completed",
+                total=len(nodes),
+                available=len(available_nodes),
+                failed=len(failed_nodes),
+                avg_response_time=sum(r.response_time for r in results) / len(results) if results else 0
+            )
+            
+            if failed_nodes:
+                logger.debug(
+                    "unavailable_nodes_detected",
+                    failed_nodes=[node_id[:16] for node_id in failed_nodes[:10]]  # Log solo primi 10
+                )
+            
+            return available_nodes
+            
+        except Exception as e:
+            logger.error(
+                "node_availability_check_failed",
+                error=str(e),
+                falling_back_to_all_nodes=True
+            )
+            
+            # Fallback: ritorna tutti i nodi
+            return nodes
 
     
     async def _ping_node(self, node: NodeInfo) -> bool:

@@ -1,0 +1,59 @@
+# Additional requirements for testing and validation
+# These are in addition to base requirements.txt
+
+# Data analysis and visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+pandas>=1.3.0
+
+# Testing utilities
+pytest>=6.0.0
+pytest-asyncio>=0.18.0
+pytest-cov>=3.0.0
+
+# Performance monitoring
+psutil>=5.8.0
+
+# HTTP client for API testing
+requests>=2.25.0
+
+# Async utilities
+aiohttp>=3.8.0
+
+# JSON schema validation
+jsonschema>=4.0.0
+
+# Progress bars
+tqdm>=4.60.0
+
+# Better logging
+colorlog>=6.0.0
+
+# System monitoring
+docker>=5.0.0
+
+# Network utilities
+netifaces>=0.11.0
+
+# Time utilities
+pytz>=2021.3
+
+# Configuration validation
+pydantic>=1.8.0
+
+# Report generation
+jinja2>=3.0.0
+markdown>=3.3.0
+
+# Chart export
+plotly>=5.0.0
+
+# Statistics
+scipy>=1.7.0
+numpy>=1.21.0
+
+# Memory profiling
+memory-profiler>=0.60.0
+
+# CPU profiling
+py-spy>=0.3.0

@@ -1,0 +1,23 @@
+version: '3.8'
+
+# Override file per deployment con 100 worker (scala: large)
+# Generato automaticamente da deploy_scale.sh
+
+services:
+  worker:
+    environment:
+      - WORKER_COUNT=100
+      - BOOTSTRAP_SCALE_STRATEGY=large
+    deploy:
+      replicas: 100
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+  # Bootstrap nodes non necessari per scala large
+  bootstrap-quinary:
+    profiles: []
+  bootstrap-senary:
+    profiles: []

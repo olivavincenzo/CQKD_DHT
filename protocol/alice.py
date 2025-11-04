@@ -567,5 +567,6 @@ async def get_network_status():
         logger.error("network_status_error", error=str(e))
         return {"error": str(e), "status": "error"}
 
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

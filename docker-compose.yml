@@ -49,35 +49,161 @@ services:
       retries: 5
       start_period: 30s
 
-  worker:
+  bootstrap-tertiary:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: cqkd-dht-node:latest
+    container_name: cqkd-bootstrap-tertiary
     environment:
-      - DHT_PORT=7000
+      - DHT_PORT=5680
+      - NODE_ID=bootstrap-tertiary
       - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "5680:5680/udp"
+    networks:
+      - cqkd-network
     depends_on:
       bootstrap-primary:
         condition: service_healthy
       bootstrap-secondary:
         condition: service_healthy
+    command: ["python", "-m", "scripts.bootstrap_node"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bootstrap-quaternary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:latest
+    container_name: cqkd-bootstrap-quaternary
+    environment:
+      - DHT_PORT=5681
+      - NODE_ID=bootstrap-quaternary
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "5681:5681/udp"
     networks:
       - cqkd-network
-    command: ["python", "-m", "scripts.worker_node"]
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    command: ["python", "-m", "scripts.bootstrap_node"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bootstrap-quinary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:latest
+    container_name: cqkd-bootstrap-quinary
+    environment:
+      - DHT_PORT=5682
+      - NODE_ID=bootstrap-quinary
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "5682:5682/udp"
+    networks:
+      - cqkd-network
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    command: ["python", "-m", "scripts.bootstrap_node"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bootstrap-senary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:latest
+    container_name: cqkd-bootstrap-senary
+    environment:
+      - DHT_PORT=5683
+      - NODE_ID=bootstrap-senary
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+    ports:
+      - "5683:5683/udp"
+    networks:
+      - cqkd-network
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+    command: ["python", "-m", "scripts.bootstrap_node"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    image: cqkd-dht-node:latest
+    environment:
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679,bootstrap-tertiary:5680,bootstrap-quaternary:5681,bootstrap-quinary:5682,bootstrap-senary:5683
+      - BOOTSTRAP_SCALE_STRATEGY=adaptive  # small, medium, large, xlarge, adaptive
+    depends_on:
+      bootstrap-primary:
+        condition: service_healthy
+      bootstrap-secondary:
+        condition: service_healthy
+      bootstrap-tertiary:
+        condition: service_healthy
+      bootstrap-quaternary:
+        condition: service_healthy
+      bootstrap-quinary:
+        condition: service_healthy
+      bootstrap-senary:
+        condition: service_healthy
+    networks:
+      - cqkd-network
+    command: ["/bin/bash", "/app/scripts/entrypoint_worker.sh"]
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 64M
         reservations:
-          memory: 128M
+          memory: 32M
+    # Rimuoviamo la mappatura delle porte per evitare conflitti
+    # I worker useranno porte dinamiche interne senza mappatura esterna
 
   bob:
     image: cqkd-dht-node:latest
     container_name: cqkd-bob
     environment:
       - DHT_PORT=6001
-      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679,bootstrap-tertiary:5680,bootstrap-quaternary:5681,bootstrap-quinary:5682,bootstrap-senary:5683
     depends_on:
       - bootstrap-primary
       - bootstrap-secondary
+      - bootstrap-tertiary
+      - bootstrap-quaternary
+      - bootstrap-quinary
+      - bootstrap-senary
     networks:
       - cqkd-network
     ports:
@@ -91,12 +217,16 @@ services:
     container_name: cqkd-alice
     environment:
       - DHT_PORT=6000
-      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679
+      - BOOTSTRAP_NODES=bootstrap-primary:5678,bootstrap-secondary:5679,bootstrap-tertiary:5680,bootstrap-quaternary:5681,bootstrap-quinary:5682,bootstrap-senary:5683
       - BOB_DHT_ADDRESS=bob:6001 # Indirizzo di Bob nella rete DHT
     depends_on:
       - bob # Alice deve assicurarsi che Bob sia avviato per potergli parlare via API
       - bootstrap-primary
       - bootstrap-secondary
+      - bootstrap-tertiary
+      - bootstrap-quaternary
+      - bootstrap-quinary
+      - bootstrap-senary
     networks:
       - cqkd-network
     ports:
