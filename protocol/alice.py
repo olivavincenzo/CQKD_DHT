@@ -13,10 +13,11 @@ from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-
 class Alice:
     """
-    Alice - Implementazione COMPLETA seguendo TUTTI i 19 step del paper
+    Alice - Implementazione COMPLETA seguendo i 19 step del paper (Sezione 4)
+    
+    APPROCCIO 2: Decentralizzazione totale - BG genera le basi di Alice
     """
     
     def __init__(self, node: CQKDNode, bob_address: str):
@@ -27,7 +28,7 @@ class Alice:
         self.alice_bases: List[str] = []
         self.alice_bits: List[int] = []
         self.sorting_rule: List[int] = []
-        
+    
     async def generate_key(
         self,
         desired_length_bits: int,
@@ -43,9 +44,7 @@ class Alice:
         Returns:
             bytes: Chiave generata
         """
-        
-        
-        try:       
+        try:
             # ========== STEP 1: Alice calcola lk = |2.5 * lc| ==========
             requirements = self.orchestrator.calculate_required_nodes(desired_length_bits)
             lk = requirements['initial_key_length']
@@ -54,103 +53,96 @@ class Alice:
             
             logger.info("step_1_complete", lc=lc, lk=lk, alpha=alpha)
             
-            # ========== STEP 2: Alice ping nodi e verifica #(n) >= 5lk ==========
+            # ========== STEP 2-3: Alice ping nodi e verifica #(n) >= 5lk ==========
             if available_nodes is None:
                 available_nodes = await self.orchestrator.discover_available_nodes(
                     required_count=alpha,
-                    required_capabilities=None,  # Tutte le capacità per massima flessibilità
-                    max_retries=3  # NUOVO: Aumenta retry per discovery robusto
+                    required_capabilities=None,
+                    max_retries=3
                 )
-            
-            # ========== STEP 3: Alice ping nodi e verifica #(n) >= 5lk ==========
             
             if len(available_nodes) < alpha:
                 raise ValueError(
-                    f"Nodi insufficienti: richiesti {requirements['total']}, "
+                    f"Nodi insufficienti: richiesti {alpha}, "
                     f"disponibili {len(available_nodes)}"
                 )
             
-            logger.info("step_2", available_nodes=len(available_nodes))
+            logger.info("step_2_3_complete", available_nodes=len(available_nodes))
             
-            # ========== STEP 4: Alice alloca nodi QSG, BG, QPP, QPM, QPC ==========
+            # ========== STEP 4-6: Alice alloca nodi QSG, BG, QPP, QPM, QPC ==========
             allocation = await self.orchestrator.allocate_nodes(
                 available_nodes,
                 requirements
             )
-
-            logger.info(f"!allocation: {allocation}")
             
-            # ========== STEP 5: Alice apre process_id unico ==========
+            logger.info(
+                "step_4_5_6_complete",
+                qsg=len(allocation.get(NodeRole.QSG, [])),
+                bg=len(allocation.get(NodeRole.BG, [])),
+                qpp=len(allocation.get(NodeRole.QPP, [])),
+                qpm=len(allocation.get(NodeRole.QPM, [])),
+                qpc=len(allocation.get(NodeRole.QPC, []))
+            )
+            
+            # ========== STEP 7: Alice apre process_id unico ==========
             process_id = self.orchestrator.process_id
             self.process_id = process_id
             logger.info("step_7_complete", process_id=process_id)
-
-            # ========== STEP 6: DISPATCH commands to worker nodes ==========
-            await self._dispatch_quantum_operations(lk, allocation)
             
-            # ========== STEP 7 (continued): COLLECT results from worker nodes =====
+            # ========== STEP 8: Alice comanda i nodi (QSG, BG_A, QPP) ==========
+            await self._dispatch_quantum_operations(lk, allocation)
+            logger.info("step_8_dispatch_complete")
+            
+            # ========== STEP 9: Alice raccoglie risultati (spin da QSG, basi da BG) ==========
             await self._collect_quantum_results(lk)
-
             logger.info(
-                "step_8_9_quantum_data_collected_from_workers",
+                "step_9_collect_complete",
                 bits=len(self.alice_bits),
                 bases=len(self.alice_bases)
             )
-
-            # ========== STEP 10: Random shuffling for security =====
+            
+            # ========== STEP 10: Alice genera NUOVO ORDINE CASUALE (sorting rule) ==========
             indices = list(range(lk))
             shuffled_indices = indices.copy()
             secrets.SystemRandom().shuffle(shuffled_indices)
             self.sorting_rule = shuffled_indices
             
-            # Apply shuffling to ALL Alice's data
+            # Applica shuffling ai dati di Alice
             self.alice_bits = [self.alice_bits[i] for i in shuffled_indices]
             self.alice_bases = [self.alice_bases[i] for i in shuffled_indices]
             
             logger.info(
-                "step_10_random_shuffling_applied",
+                "step_10_shuffling_complete",
                 sorting_rule_sample=self.sorting_rule[:5]
             )
             
-            shuffled_data={
-                "lk": lk,
-                "lc": lc,
-                "alice_bases": self.alice_bases,
-                "alice_bits": self.alice_bits,
-                "shuffled": True,
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            # Store shuffled data for QPM nodes
-            await self.node.store_data(
-                f"{process_id}:alice_shuffled_data",
-                json.dumps(shuffled_data)
-    
-            )
-
-            # ===== STEP 11: Notify Bob =====
+            # ========== STEP 11: Alice notifica Bob (lk, sorting_rule, QPM addresses) ==========
             await self._notify_bob(
                 process_id,
-                lk, 
-                lc, 
-                self.sorting_rule, 
-                self.alice_bases, 
+                lk,
+                lc,
+                self.sorting_rule,
+                self.alice_bases,
                 allocation
             )
             logger.info("step_11_bob_notified")
-
             
-            # ========== STEP 12-15: Attendi che Bob completi le misurazioni ==========
+            # ========== STEP 12-17: Attendi che Bob completi (Bob esegue in parallelo) ==========
+            # Bob farà step 12-15: ping nodi, alloca BG_B, genera basi
+            # Bob farà step 16-17: QPM misura, invia a Bob e QPC
+            
             logger.info("waiting_for_bob_and_qpc")
+            
+            # ========== STEP 18: Attendi QPC collision ==========
             valid_positions = await self._wait_for_qpc_sifting()
             
             logger.info(
-                "step_18_sifting_complete",
+                "step_18_qpc_sifting_complete",
                 valid_positions=len(valid_positions),
                 sift_ratio=len(valid_positions) / lk if lk > 0 else 0
             )
             
-            # ===== STEP 19: Extract final key from valid positions =====
+            # ========== STEP 19: Alice ordina secondo sorting_rule e cancella bit errati ==========
             sifted_bits = [
                 self.alice_bits[i] for i in valid_positions
                 if i < len(self.alice_bits)
@@ -162,7 +154,6 @@ class Alice:
                     required=lc,
                     available=len(sifted_bits)
                 )
-                # Use what we have
                 final_key_bits = sifted_bits
             else:
                 final_key_bits = sifted_bits[:lc]
@@ -176,6 +167,7 @@ class Alice:
             )
             
             await self.orchestrator.complete_process(success=True)
+            
             logger.info(
                 "alice_19step_protocol_complete",
                 process_id=process_id,
@@ -183,135 +175,159 @@ class Alice:
             )
             
             return key_bytes
-    
+            
         except Exception as e:
-                logger.error(
-                    "alice_protocol_failed",
-                    error=str(e),
-                    process_id=process_id,
-                    exc_info=True
+            logger.error(
+                "alice_protocol_failed",
+                error=str(e),
+                process_id=self.process_id,
+                exc_info=True
+            )
+            
+            if self.process_id:
+                await self.orchestrator.complete_process(
+                    success=False,
+                    error_message=str(e)
                 )
-                
-                if process_id:
-                    await self.orchestrator.complete_process(
-                        success=False,
-                        error_message=str(e)
-                    )
-                
-                raise
+            
+            raise
         finally:
             await self.orchestrator.stop()
-        
+    
+# alice.py - APPROCCIO 2 CON COMANDI ESPLICITI A TUTTI I NODI
 
     async def _dispatch_quantum_operations(
-            self, 
-            lk: int, 
-            allocation: Dict[NodeRole, List[str]]
-        ):
-            """
-            STEP 8: Dispatch commands to worker nodes for quantum operations.
-            Alice sends commands via DHT, workers execute them.
-            """
-            logger.info(
-                "dispatching_quantum_operations_to_workers",
-                lk=lk
-            )
+        self,
+        lk: int,
+        allocation: Dict[NodeRole, List[str]]
+    ):
+        """
+        STEP 8: Alice comanda TUTTI i nodi quantistici.
+        
+        Secondo il paper (Step 8): "Alice trasmette comandi ai nodi"
+        Questo significa che Alice invia comandi espliciti a:
+        - QSG: genera spin
+        - BG: genera base
+        - QPP: calcola polarizzazione
+        - QPM: misura
+        """
+        logger.info("dispatching_quantum_operations", lk=lk)
+        
+        qsg_nodes = allocation.get(NodeRole.QSG, [])
+        bg_nodes = allocation.get(NodeRole.BG, [])
+        qpp_nodes = allocation.get(NodeRole.QPP, [])
+        qpm_nodes = allocation.get(NodeRole.QPM, [])
+        qpc_node = allocation.get(NodeRole.QPC, [None])[0]
+        
+        dispatch_tasks = []
+        
+        for i in range(lk):
+            qsg_node_id = qsg_nodes[i % len(qsg_nodes)]
+            bg_node_id = bg_nodes[i % len(bg_nodes)]
+            qpp_node_id = qpp_nodes[i % len(qpp_nodes)]
+            qpm_node_id = qpm_nodes[i % len(qpm_nodes)]
             
-            qsg_nodes = allocation.get(NodeRole.QSG, [])
-            bg_nodes = allocation.get(NodeRole.BG, [])
-            qpp_nodes = allocation.get(NodeRole.QPP, [])
-
-            
-            # Dispatch commands to each worker node
-            dispatch_tasks = []
-            role_assignment_tasks = []
-            
-            for i in range(lk):
-                # Command to QSG node
-                qsg_node_id = qsg_nodes[i % len(qsg_nodes)]
-                qsg_cmd = {
-                    "cmd_id": f"{self.process_id}_qsg_{i}",
+            # ===== COMANDO 1: QSG =====
+            qsg_cmd = {
+                "cmd_id": f"{self.process_id}_qsg_{i}",
+                "process_id": self.process_id,
+                "role": NodeRole.QSG.value,
+                "operation_id": i,
+                "params": {
                     "process_id": self.process_id,
-                    "role": NodeRole.QSG.value,
                     "operation_id": i,
-                    "params": {
-                        "process_id": self.process_id,
-                        "operation_id": i,
-                        "alice_addr": self.node.node_id,
-                        "qpp_addr": qpp_nodes[i % len(qpp_nodes)]
-                    }
+                    "alice_addr": self.node.node_id,
+                    "qpp_addr": qpp_node_id.get('id')
                 }
-                
-                # Command to BG node (for Alice's base)
-                bg_node_id = bg_nodes[i % len(bg_nodes)]
-                bg_cmd = {
-                    "cmd_id": f"{self.process_id}_bg_alice_{i}",
+            }
+            
+            # ===== COMANDO 2: BG (per Alice) =====
+            bg_cmd = {
+                "cmd_id": f"{self.process_id}_bg_alice_{i}",
+                "process_id": self.process_id,
+                "role": NodeRole.BG.value,
+                "operation_id": i,
+                "params": {
                     "process_id": self.process_id,
-                    "role": NodeRole.BG.value,
                     "operation_id": i,
-                    "params": {
-                        "process_id": self.process_id,
-                        "operation_id": i,
-                        "bob_addr": None,  # For Alice
-                        "qpm_addr": None
-                    }
+                    "owner": "alice",
+                    "alice_addr": self.node.node_id,
+                    "qpp_addr": qpp_node_id.get('id'),
+                    "qpm_addr": qpm_node_id.get('id')
                 }
-                
-                
-                
-
-
-                key_qsg=f"cmd:{qsg_node_id.get('id')}"
-                key_bg=f"cmd:{bg_node_id.get('id')}"
-                logger.info(f"Contatto il nodo qsg con: {key_qsg}")
-                logger.info(f"Contatto il nodo bg con: {key_bg}")
-
-
-                dispatch_tasks.append(
-                    self.node.store_data(key_qsg, json.dumps(qsg_cmd))
-                )
-
-                dispatch_tasks.append(
-                    self.node.store_data(key_bg, json.dumps(bg_cmd))
-                )
+            }
             
-            # Wait for all commands to be dispatched
-            await asyncio.gather(*dispatch_tasks)
+            # ===== COMANDO 3: QPP =====
+            # QPP leggerà spin da QSG e base da BG dalla DHT
+            qpp_cmd = {
+                "cmd_id": f"{self.process_id}_qpp_{i}",
+                "process_id": self.process_id,
+                "role": NodeRole.QPP.value,
+                "operation_id": i,
+                "params": {
+                    "process_id": self.process_id,
+                    "operation_id": i,
+                    "qpm_addr": qpm_node_id.get('id')
+                }
+            }
             
-            logger.info(
-                "quantum_operations_dispatched",
-                process_id=self.process_id,
-                commands_sent=len(dispatch_tasks)
-            )
+            # ===== COMANDO 4: QPM =====
+            # QPM leggerà polarizzazione da QPP e base_bob da BG_B dalla DHT
+            qpm_cmd = {
+                "cmd_id": f"{self.process_id}_qpm_{i}",
+                "process_id": self.process_id,
+                "role": NodeRole.QPM.value,
+                "operation_id": i,
+                "params": {
+                    "process_id": self.process_id,
+                    "operation_id": i,
+                    "bob_addr": self.bob_address,
+                    "qpc_addr": qpc_node.get('id') if qpc_node else None
+                }
+            }
+            
+            dispatch_tasks.extend([
+                self.node.store_data(f"cmd:{qsg_node_id.get('id')}", json.dumps(qsg_cmd)),
+                self.node.store_data(f"cmd:{bg_node_id.get('id')}", json.dumps(bg_cmd)),
+                self.node.store_data(f"cmd:{qpp_node_id.get('id')}", json.dumps(qpp_cmd)),
+                self.node.store_data(f"cmd:{qpm_node_id.get('id')}", json.dumps(qpm_cmd))
+            ])
+        
+        await asyncio.gather(*dispatch_tasks)
+        
+        logger.info(
+            "quantum_operations_dispatched",
+            commands_sent=len(dispatch_tasks),
+            qsg=lk,
+            bg=lk,
+            qpp=lk,
+            qpm=lk
+        )
 
 
+    
     async def _collect_quantum_results(self, lk: int):
         """
         STEP 9: Collect results from worker nodes.
-        Alice waits for workers to write results to DHT.
+        
+        Alice raccoglie:
+        - Spin da QSG_i
+        - Basi da BG_A,i (generate dai worker, non localmente!)
         """
-        logger.info(
-            "collecting_quantum_results_from_workers",
-            process_id=self.process_id,
-            lk=lk
-        )
+        logger.info("collecting_quantum_results", lk=lk)
         
         self.alice_bits = []
         self.alice_bases = []
         
-        # Collect results with timeout
         for i in range(lk):
-            # Wait for QSG result
+            # Raccogli spin da QSG
             qsg_result = await self._wait_for_result(
                 f"{self.process_id}:qsg_result:{i}",
                 timeout=30
             )
-
             self.alice_bits.append(qsg_result.get("spin", 0))
             
-            # Wait for BG result (Alice's base)
-
-
+            # ✅ Raccogli base da BG (generata dal worker!)
             bg_result = await self._wait_for_result(
                 f"{self.process_id}:bg_alice_result:{i}",
                 timeout=30
@@ -320,94 +336,33 @@ class Alice:
         
         logger.info(
             "quantum_results_collected",
-            process_id=self.process_id,
             bits=len(self.alice_bits),
             bases=len(self.alice_bases)
         )
-
+    
     async def _wait_for_result(
-        self, 
-        key: str, 
+        self,
+        key: str,
         timeout: int = 30
     ) -> Dict[str, Any]:
-        """
-        Wait for a specific result to appear in DHT.
-        
-        Args:
-            key: DHT key to wait for
-            timeout: Maximum seconds to wait
-            
-        Returns:
-            Result data from DHT
-        """
-        for attempt in range(timeout * 2):  # Poll every 0.5 seconds
+        """Wait for a specific result to appear in DHT."""
+        for attempt in range(timeout * 2):
             result = await self.node.retrieve_data(key)
-            
             if result:
                 return result
             
             await asyncio.sleep(0.5)
             
             if (attempt + 1) % 10 == 0:
-                logger.debug(
-                    "still_waiting_for_result",
-                    key=key,
-                    attempt=attempt + 1
-                )
+                logger.debug("still_waiting_for_result", key=key, attempt=attempt + 1)
         
         raise TimeoutError(f"Timeout waiting for result: {key}")
-
-    async def _execute_qsg_bg_qpp_chain(
-        self,
-        index: int,
-        qsg_node_id: str,
-        qpp_node_id: str,
-        qpm_node_id: str,
-        alice_base: str
-    ) -> Dict[str, Any]:
-        """Esegue catena QSG → QPP → QPM per un singolo fotone"""
-        process_id = self.orchestrator.process_id
-        operation_id = f"photon_{index}"
-        
-        # QSG genera spin
-        spin = QuantumSpinGenerator.generate_spin()
-        
-        # QPP applica polarizzazione con base di Alice
-        polarization = QuantumPhotonPolarizer.polarize(spin, alice_base)
-        
-        # ✅ Serializza il dict in JSON string
-        import json
-        data_to_store = {
-            "polarization": polarization,
-            "alice_base": alice_base,
-            "from_qpp": qpp_node_id,
-            "operation_id": operation_id
-        }
-        
-        key_to_qpm = f"{process_id}:qpp:{operation_id}:to_qpm:{qpm_node_id}"
-        await self.node.store_data(key_to_qpm, json.dumps(data_to_store))  # ✅ Converte in string
-        
-        return {
-            "index": index,
-            "alice_bit": spin,
-            "alice_base": alice_base,
-            "polarization": polarization,
-            "qsg_node": qsg_node_id,
-            "qpp_node": qpp_node_id,
-            "qpm_node": qpm_node_id
-        }
-
+    
     async def _wait_for_qpc_sifting(self) -> List[int]:
-        """
-        Wait for QPC to complete sifting (step 18).
-        
-        Returns:
-            List[int]: Valid bit positions where bases matched
-        """
+        """STEP 18: Wait for QPC to complete sifting."""
         logger.info("alice_waiting_for_qpc_sifting", process_id=self.process_id)
         
-        for attempt in range(120):  # 1 minute timeout
-            # Try process-specific key
+        for attempt in range(120):
             result = await self.node.retrieve_data(
                 f"{self.process_id}:qpc_sifting_result"
             )
@@ -420,22 +375,13 @@ class Alice:
                 )
                 return result["valid_positions"]
             
-            # Try latest key
-            result = await self.node.retrieve_data("latest_qpc_sifting_result")
-            if result and "valid_positions" in result:
-                if result.get("process_id") == self.process_id:
-                    return result["valid_positions"]
-            
             await asyncio.sleep(0.5)
             
             if (attempt + 1) % 10 == 0:
-                logger.debug(
-                    "alice_still_waiting_qpc",
-                    attempt=attempt + 1
-                )
+                logger.debug("alice_still_waiting_qpc", attempt=attempt + 1)
         
         raise TimeoutError("Timeout waiting for QPC sifting results")
-
+    
     async def _notify_bob(
         self,
         process_id: str,
@@ -445,9 +391,9 @@ class Alice:
         alice_bases: List[str],
         allocation: dict
     ):
-
+        """STEP 11: Alice notifica Bob con lk, sorting_rule, indirizzi QPM."""
         notification_data = {
-            "process_id": self.process_id,
+            "process_id": process_id,
             "lc": lc,
             "lk": lk,
             "sorting_rule": sorting_rule,
@@ -455,48 +401,14 @@ class Alice:
             "qpm_nodes": allocation.get(NodeRole.QPM, []),
             "qpc_node": allocation.get(NodeRole.QPC, [None])[0],
             "alice_node": self.node.node_id,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.datetime.now().isoformat()
         }
+        
         key = f"{process_id}:alice_to_bob"
-        await self.node.store_data(key, json.dumps(notification_data)) 
+        await self.node.store_data(key, json.dumps(notification_data))
         
         logger.info("alice_notified_bob", process_id=process_id, lk=lk)
 
-    async def _execute_qpc_sifting(
-        self,
-        process_id: str,
-        qpc_node,
-        measurements: List[Dict[str, Any]]
-    ) -> List[int]:
-        """
-        STEP 16-17: Esegue il sifting tramite QPC
-        
-        Returns:
-            List[int]: Posizioni valide (basi coincidenti)
-        """
-        from quantum.qpc import QuantumPhotonCollider
-        
-        operation_id = f"sifting_{process_id}"
-        
-        logger.info("executing_qpc_sifting", measurements_count=len(measurements))
-        
-        # ✅ Costruisci address da port (CQKDNode ha solo port, non address)
-        alice_address = f"127.0.0.1:{self.node.port}"  # Usa port del nodo
-        bob_address = self.bob_address  # Già una stringa "IP:PORT"
-        
-        # Esegui QPC
-        result = await QuantumPhotonCollider.execute(
-            node=self.node,
-            process_id=process_id,
-            operation_id=operation_id,
-            measurements=measurements,
-            alice_addr=alice_address,  # ✅ Usa la stringa costruita
-            bob_addr=bob_address
-        )
-        
-        logger.info("qpc_sifting_complete", valid_positions=len(result.get('valid_positions', [])))
-        
-        return result.get('valid_positions', [])
 
 
 
