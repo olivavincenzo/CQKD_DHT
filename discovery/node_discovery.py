@@ -30,7 +30,7 @@ class NodeDiscoveryService:
     """
     
     # Parametri Kademlia standard
-    ALPHA = 3  # Parallelism factor per query concorrenti
+    ALPHA = 5  # Parallelism factor per query concorrenti
     K = 20     # Numero di nodi più vicini da trovare
     
     # Timeout e retry
@@ -81,8 +81,7 @@ class NodeDiscoveryService:
         
 
         # Step 3: Verifica stato e disponibilità
-        # available_nodes = await self._verify_node_availability(filtered_nodes)  # ❌ COMMENTATO
-        available_nodes = filtered_nodes  # ✅ Usa direttamente i nodi trovati
+        available_nodes = await self._verify_node_availability(filtered_nodes)
 
         
         duration = (datetime.now() - start_time).total_seconds()

@@ -25,9 +25,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-2:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-2
@@ -53,9 +53,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-3:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-3
@@ -81,9 +81,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-4:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-4
@@ -109,9 +109,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-5:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-5
@@ -137,9 +137,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-6:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-6
@@ -165,9 +165,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-7:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-7
@@ -193,9 +193,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-8:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-8
@@ -221,9 +221,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-9:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-9
@@ -249,9 +249,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-10:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-10
@@ -277,9 +277,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-11:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-11
@@ -305,9 +305,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-12:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-12
@@ -333,9 +333,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-13:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-13
@@ -361,9 +361,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-14:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-14
@@ -389,9 +389,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-15:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-15
@@ -417,9 +417,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-16:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-16
@@ -445,9 +445,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-17:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-17
@@ -473,9 +473,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-18:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-18
@@ -501,9 +501,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-19:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-19
@@ -529,9 +529,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-20:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-20
@@ -557,9 +557,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-21:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-21
@@ -585,9 +585,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-22:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-22
@@ -613,9 +613,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-23:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-23
@@ -641,9 +641,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-24:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-24
@@ -669,9 +669,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-25:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-25
@@ -697,9 +697,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-26:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-26
@@ -725,9 +725,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-27:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-27
@@ -753,9 +753,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-28:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-28
@@ -781,9 +781,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-29:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-29
@@ -809,9 +809,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-30:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-30
@@ -837,9 +837,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-31:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-31
@@ -865,9 +865,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-32:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-32
@@ -893,9 +893,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-33:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-33
@@ -921,9 +921,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-34:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-34
@@ -949,9 +949,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-35:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-35
@@ -977,9 +977,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-36:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-36
@@ -1005,9 +1005,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-37:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-37
@@ -1033,9 +1033,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-38:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-38
@@ -1061,9 +1061,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-39:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-39
@@ -1089,9 +1089,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-40:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-40
@@ -1117,9 +1117,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-41:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-41
@@ -1145,9 +1145,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-42:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-42
@@ -1173,9 +1173,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-43:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-43
@@ -1201,9 +1201,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-44:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-44
@@ -1229,9 +1229,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-45:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-45
@@ -1257,9 +1257,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-46:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-46
@@ -1285,9 +1285,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-47:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-47
@@ -1313,9 +1313,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-48:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-48
@@ -1341,9 +1341,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-49:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-49
@@ -1369,9 +1369,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-50:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-50
@@ -1397,9 +1397,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-51:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-51
@@ -1425,9 +1425,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-52:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-52
@@ -1453,9 +1453,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-53:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-53
@@ -1481,9 +1481,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-54:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-54
@@ -1509,9 +1509,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-55:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-55
@@ -1537,9 +1537,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-56:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-56
@@ -1565,9 +1565,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-57:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-57
@@ -1593,9 +1593,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-58:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-58
@@ -1621,9 +1621,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-59:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-59
@@ -1649,9 +1649,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-60:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-60
@@ -1677,9 +1677,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-61:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-61
@@ -1705,9 +1705,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-62:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-62
@@ -1733,9 +1733,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-63:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-63
@@ -1761,9 +1761,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-64:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-64
@@ -1789,9 +1789,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-65:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-65
@@ -1817,9 +1817,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-66:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-66
@@ -1845,9 +1845,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-67:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-67
@@ -1873,9 +1873,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-68:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-68
@@ -1901,9 +1901,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-69:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-69
@@ -1929,9 +1929,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-70:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-70
@@ -1957,9 +1957,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-71:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-71
@@ -1985,9 +1985,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-72:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-72
@@ -2013,9 +2013,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-73:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-73
@@ -2041,9 +2041,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-74:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-74
@@ -2069,9 +2069,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-75:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-75
@@ -2097,9 +2097,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-76:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-76
@@ -2125,9 +2125,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-77:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-77
@@ -2153,9 +2153,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-78:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-78
@@ -2181,9 +2181,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-79:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-79
@@ -2209,9 +2209,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-80:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-80
@@ -2237,9 +2237,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-81:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-81
@@ -2265,9 +2265,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-82:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-82
@@ -2293,9 +2293,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-83:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-83
@@ -2321,9 +2321,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-84:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-84
@@ -2349,9 +2349,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-85:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-85
@@ -2377,9 +2377,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-86:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-86
@@ -2405,9 +2405,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-87:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-87
@@ -2433,9 +2433,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-88:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-88
@@ -2461,9 +2461,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-89:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-89
@@ -2489,9 +2489,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-90:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-90
@@ -2517,9 +2517,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-91:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-91
@@ -2545,9 +2545,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-92:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-92
@@ -2573,9 +2573,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-93:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-93
@@ -2601,9 +2601,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-94:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-94
@@ -2629,9 +2629,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-95:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-95
@@ -2657,9 +2657,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-96:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-96
@@ -2685,9 +2685,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-97:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-97
@@ -2713,9 +2713,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-98:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-98
@@ -2741,9 +2741,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-99:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-99
@@ -2769,9 +2769,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
   worker-100:
     image: cqkd-dht-node:latest
     container_name: cqkd_dht-worker-100
@@ -2797,9 +2797,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 60M
         reservations:
-          memory: 128M
+          memory: 60M
 
 networks:
   cqkd-network:

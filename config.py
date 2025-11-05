@@ -56,10 +56,11 @@ class Settings(BaseSettings):
     request_timeout_seconds: int = 30
 
     # DHT Scalability
-    dht_ksize: int = 25  # Dimensione bucket Kademlia
-    bootstrap_timeout_seconds: int = 30  # Timeout per bootstrap
-    max_concurrent_discovery: int = 50  # Max discovery paralleli
-    discovery_batch_size: int = 10  # Batch size per discovery
+    dht_ksize: int = 100  # Dimensione bucket Kademlia
+    bootstrap_timeout_seconds: int = 90  # Timeout per bootstrap
+    min_bootstrap_nodes: int = 5 # Numero minimo di nodi per considerare il bootstrap riuscito
+    max_concurrent_discovery: int = 100  # Max discovery paralleli
+    discovery_batch_size: int = 20  # Batch size per discovery
     max_discovery_time: int = 60  # Timeout discovery per reti grandi
 
     # Monitoring

@@ -5,6 +5,7 @@ import secrets
 from core.dht_node import CQKDNode
 from utils.logging_config import setup_logging, get_logger
 from protocol.worker import WorkerExecutor
+import random
 
 setup_logging()
 logger = get_logger(__name__)
@@ -14,13 +15,13 @@ async def main():
     Avvia un nodo worker, lo connette alla rete DHT e lo lascia in esecuzione.
     """
     port = int(os.getenv("DHT_PORT", 7000))
+    worker_node = CQKDNode(port=port, node_id=None)
+    
 
     bootstrap_nodes_str = os.getenv("BOOTSTRAP_NODES")
-
     if not bootstrap_nodes_str:
         logger.error("✗ La variabile d'ambiente BOOTSTRAP_NODES è richiesta.")
         return
-
     # Converte "host1:port1,host2:port2" in [("host1", port1), ("host2", port2)]
     bootstrap_nodes = []
     for addr in bootstrap_nodes_str.split(','):
@@ -28,15 +29,12 @@ async def main():
         bootstrap_nodes.append((host, int(b_port)))
 
 
-
-
-    worker_node = CQKDNode(port=port, node_id=None)
-
     try:
-        await worker_node.start()
+        await worker_node.start() # await self.server.listen(self.port)
 
         logger.info(f"✓ Worker node avviato. Tentativo di bootstrap verso {bootstrap_nodes}...")
 
+        # PROCESSO PER RECUPERARE ID DEL NODO
         real_node_id = getattr(worker_node.server.node, "id", None)
 
         if real_node_id:
@@ -53,34 +51,14 @@ async def main():
         else:
             logger.warning("⚠ Impossibile determinare il node_id reale della DHT")
 
-
-
         logger.info(f"real_node_id:{real_node_id_str}")
 
         # Aggiungi delay casuale per evitare collisioni
-        import random
-        await asyncio.sleep(random.uniform(0.5, 2.0))
+        await asyncio.sleep(2)
 
         await worker_node.bootstrap(bootstrap_nodes)
 
-        # Verifica che abbiamo nodi nella routing table
-        routing_info = worker_node.get_routing_table_info()
-        if routing_info.get('total_nodes', 0) == 0:
-            logger.warning(f"⚠ Worker '{real_node_id_str}': routing table vuota dopo bootstrap, attendo 10s...")
-            await asyncio.sleep(10)  # Dai tempo alla rete di stabilizzarsi
-
-            # Riprova il bootstrap
-            await worker_node.bootstrap(bootstrap_nodes)
-            routing_info = worker_node.get_routing_table_info()
-
-        if routing_info.get('total_nodes', 0) > 0:
-            logger.info(f"✓ Worker node '{real_node_id_str}' connesso alla rete DHT con {routing_info['total_nodes']} nodi.")
-        else:
-            logger.warning(f"⚠ Worker node '{real_node_id_str}' connesso ma routing table vuota.")
-
-
-
-
+     
 
         # ===== START EXECUTOR FOR QUANTUM OPERATIONS =====
         executor = WorkerExecutor(worker_node, polling_interval=0.3)

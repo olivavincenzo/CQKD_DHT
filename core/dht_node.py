@@ -43,6 +43,7 @@ class CQKDNode:
 
         logger.info(
             "node_initialized",
+            ksize= settings.dht_ksize,
             node_id=self.node_id,
             port=self.port,
             capabilities=[r.value for r in self.capabilities]
@@ -116,8 +117,7 @@ class CQKDNode:
             # Resolve hostnames to IP addresses to avoid socket family mismatch issues
             resolved_nodes = await self._resolve_bootstrap_nodes(bootstrap_nodes)
             print(f"[{self.node_id}] Nodi risolti: {resolved_nodes}")
-            
-            await self.server.bootstrap(resolved_nodes)
+
             
             # Aspetta che il routing table sia popolato
             max_attempts = 120  # 60 secondi totali per reti molto grandi
@@ -143,17 +143,25 @@ class CQKDNode:
                     if nodes_per_bucket:
                         print(f"  └─ Distribuzione: {', '.join(nodes_per_bucket)}")
                 
-                if total_nodes > 0:
+                await self.server.bootstrap(resolved_nodes)
+
+                # Dopo il tentativo di bootstrap, controlla di nuovo la routing table
+                router = self.server.protocol.router
+                total_nodes_after = sum(len(bucket.get_nodes()) for bucket in router.buckets)
+                
+                if total_nodes_after > 0:
+                    active_buckets_after = len([b for b in router.buckets if len(b.get_nodes()) > 0])
+                    
                     # Routing table popolata!
                     print(f"✓ [{self.node_id}] Bootstrap completato con successo!")
-                    print(f"  └─ Routing table: {total_nodes} nodi totali in {len([b for b in router.buckets if len(b.get_nodes()) > 0])} bucket attivi")
+                    print(f"  └─ Routing table: {total_nodes_after} nodi totali in {active_buckets_after} bucket attivi")
                     
                     logger.info(
                         "node_bootstrapped",
                         node_id=self.node_id,
                         bootstrap_nodes=bootstrap_nodes,
-                        routing_table_size=total_nodes,
-                        active_buckets=len([b for b in router.buckets if len(b.get_nodes()) > 0]),
+                        routing_table_size=total_nodes_after,
+                        active_buckets=active_buckets_after,
                         attempts=attempt + 1
                     )
                     return
@@ -372,7 +380,7 @@ class CQKDNode:
 
             for i, bucket in enumerate(router.buckets):
                 # Filtra solo i nodi che operano sulla porta specificata (es. 7000 per i worker)
-                nodes = [node for node in bucket.get_nodes() if node.port >= worker_port]
+                nodes = bucket.get_nodes()
                 nodes_count = len(nodes)
 
                 if nodes_count > 0:
@@ -393,7 +401,9 @@ class CQKDNode:
                             "address": f"{node.ip}:{node.port}"
                         }
                         bucket_info["nodes"].append(node_data)
-                        info["all_nodes"].append(node_data)
+                        if node.port >= worker_port:
+                            info["all_nodes"].append(node_data)
+
 
                     info["buckets_detail"].append(bucket_info)
                     info["bucket_distribution"][i] = nodes_count

@@ -4,6 +4,7 @@ set -e
 # Default number of workers
 NUM_WORKERS=${1:-1}
 BASE_PORT=7000
+WORKER_MEMORY_LIMIT=${WORKER_MEMORY_LIMIT:-30M} # Default to 30MB if not set
 # Get the project name from the current directory name
 PROJECT_NAME=$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]')
 
@@ -59,9 +60,9 @@ for i in $(seq 1 $NUM_WORKERS); do
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: ${WORKER_MEMORY_LIMIT}
         reservations:
-          memory: 128M
+          memory: ${WORKER_MEMORY_LIMIT}
 EOF
 done
 
