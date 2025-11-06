@@ -173,7 +173,7 @@ class CQKDNode:
                         active_buckets=active_buckets_after,
                         attempts=attempt + 1
                     )
-                    return
+                    return True
                 
                 # Aspetta un po' prima di riprovare (aumento per reti grandi)
                 await asyncio.sleep(1.0)  # 1 secondo per dare tempo alla rete
@@ -185,6 +185,7 @@ class CQKDNode:
                 node_id=self.node_id,
                 bootstrap_nodes=bootstrap_nodes
             )
+            return False
             
         except Exception as e:
             print(f"✗ [{self.node_id}] Errore durante bootstrap: {e}")

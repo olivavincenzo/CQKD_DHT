@@ -51,14 +51,27 @@ async def main():
         else:
             logger.warning("⚠ Impossibile determinare il node_id reale della DHT")
 
-        logger.info(f"real_node_id:{real_node_id_str}")
-
         # Aggiungi delay casuale per evitare collisioni
-        await asyncio.sleep(2)
+        await asyncio.sleep(random.uniform(0.5, 2.5))
 
-        await worker_node.bootstrap(bootstrap_nodes)
+        # Bootstrap con logica di retry
+        max_attempts = 4  # 1 tentativo iniziale + 3 retry
+        bootstrap_success = False
+        for attempt in range(max_attempts):
+            logger.info(f"Bootstrap attempt {attempt + 1}/{max_attempts}...")
+            if await worker_node.bootstrap(bootstrap_nodes):
+                logger.info("✓ Bootstrap successful.")
+                bootstrap_success = True
+                break
+            else:
+                if attempt < max_attempts - 1:
+                    delay = attempt + 1
+                    logger.warning(f"Bootstrap attempt {attempt + 1} failed. Retrying in {delay} seconds...")
+                    await asyncio.sleep(delay)
 
-     
+        if not bootstrap_success:
+            logger.error("✗ All bootstrap attempts failed. Stopping worker.")
+            raise RuntimeError("Bootstrap failed after multiple attempts.")
 
         # ===== START EXECUTOR FOR QUANTUM OPERATIONS =====
         executor = WorkerExecutor(worker_node, polling_interval=0.3)

@@ -1,13 +1,26 @@
 #!/bin/bash
 set -e
 
-# --- Docker Cleanup (Optional) ---
+# --- Docker Cleanup (Optional) with Countdown ---
 echo "================================================"
 echo "  Docker Cleanup (Optional)"
 echo "================================================"
-read -t 5 -p "Do you want to perform a full Docker cleanup (removes ALL containers, images, volumes)? (y/n) [y]: " -n 1 -r
-REPLY=${REPLY:-y}
+REPLY=""
+# Temporarily disable exit-on-error for the countdown loop
+set +e
+for i in {5..1}; do
+    echo -ne "Perform full Docker cleanup? (y/n) [n] (auto-select in $i seconds) \r"
+    read -t 1 -n 1
+    if [ $? -eq 0 ]; then
+      break
+    fi
+done
+set -e # Re-enable exit-on-error
+
 echo # Move to a new line
+
+REPLY=${REPLY:-n} # Default to 'n' if no input was received
+
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Running docker_cleanup.sh script..."
     if [ -f ./docker_cleanup.sh ]; then
@@ -24,13 +37,26 @@ fi
 echo "================================================
 "
 
-# --- Dozzle Log Monitoring (Optional) ---
+# --- Dozzle Log Monitoring (Optional) with Countdown ---
 echo "================================================"
 echo "  Log Monitoring (Optional)"
 echo "================================================"
-read -t 5 -p "Do you want to start Dozzle for real-time log monitoring? (y/n) [y]: " -n 1 -r
-REPLY=${REPLY:-y}
+REPLY=""
+# Temporarily disable exit-on-error for the countdown loop
+set +e
+for i in {5..1}; do
+    echo -ne "Start Dozzle for real-time log monitoring? (y/n) [y] (auto-select in $i seconds) \r"
+    read -t 1 -n 1
+    if [ $? -eq 0 ]; then
+      break
+    fi
+done
+set -e # Re-enable exit-on-error
+
 echo # Move to a new line
+
+REPLY=${REPLY:-y} # Default to 'y' if no input was received
+
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Starting Dozzle..."
     docker-compose -f docker-compose.dozzle.yml up -d
@@ -84,12 +110,7 @@ for i in $(seq 1 $NUM_WORKERS); do
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:
-      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', ${CURRENT_PORT})); s.close()\""]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    restart: unless-stopped
     deploy:
       resources:
         limits:
