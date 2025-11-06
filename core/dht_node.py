@@ -269,8 +269,8 @@ class CQKDNode:
             else:
                 value_to_store = value
 
-            await self.server.set(key, value_to_store)
-            logger.debug("data_stored", node_id=self.node_id, key=key)
+            result= await self.server.set(key, value_to_store)
+            logger.debug("data_stored", node_id=self.node_id, key=key, result_stored=result)
             
         except ValueError as e:
             if "socket family mismatch" in str(e) or "DNS lookup is required" in str(e):
@@ -278,8 +278,8 @@ class CQKDNode:
                 try:
                     self.server.refresh_table()
                     logger.info("routing_table_refresh_completed", node_id=self.node_id)
-                    await self.server.set(key, value_to_store)
-                    logger.info("data_stored_after_refresh", node_id=self.node_id, key=key)
+                    result =await self.server.set(key, value_to_store)
+                    logger.info("data_stored_after_refresh", node_id=self.node_id, key=key,result_set=result)
                 except Exception as retry_e:
                     logger.error(
                         "data_store_failed_after_retry",

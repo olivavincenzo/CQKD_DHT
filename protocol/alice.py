@@ -454,7 +454,7 @@ class Alice:
 import socket
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks,Query
 import uvicorn
 from pydantic import BaseModel
 import os
@@ -586,50 +586,30 @@ async def get_network_status():
         return {"error": str(e), "status": "error"}
 
 
-@app.get("/refresh-node")
-async def get_network_status():
-    """Endpoint per monitorare lo stato della rete DHT"""
+@app.get("/get")
+async def get_value(key: str = Query(..., min_length=1, description="La chiave da cercare nella DHT")):
+    """
+    Endpoint per fare get su Kademlia.
+
+    Query parameter:
+    - key: la chiave da cercare nella DHT (obbligatoria)
+    """
     try:
-        logger.info("Refresh_table start!")
+        # effettua la richiesta alla DHT; `alice_node` dovrebbe essere visibile nel modulo
+        # Se alice_node.server.get è sincrona, rimuovi `await`.
+        value: Optional[Any] = await alice_node.server.get(key)
 
-        refresh_ids= alice_node.server.protocol.get_refresh_ids()
-        logger.info(f"refresh_ids {refresh_ids}")
-        await alice_node.server._refresh_table()
-        logger.info("Refresh_table completato!")
-        routing_info = alice_node.get_routing_table_info()
-
-        # Extract nodes, sort by port, and format
-        nodes_list = routing_info.get("all_nodes", [])
-        
-        # Sort nodes by port in ascending order
-        nodes_list.sort(key=lambda n: int(n["address"].split(":")[1]))
-
-        
-
-
-        # Calcola statistiche aggiuntive
-        total_capacity = routing_info.get("total_buckets", 0) * routing_info.get("bucket_capacity", 20)
-        usage_percentage = (routing_info.get("total_nodes", 0) / total_capacity * 100) if total_capacity > 0 else 0
-
-        status = {
-            "node_id": alice_node.node_id,
-            "nodi>7000": nodes_list, # New key for sorted and formatted nodes
-            "network_metrics": {
-                "total_nodes":routing_info.get("total_nodes",0),
-                "tutti_nodi": routing_info.get("buckets_detail",0),
-                "bucket_capacity": routing_info.get("bucket_capacity",0),
-                "active_buckets": routing_info.get("active_buckets", 0),
-                "bucket_distribution": routing_info.get("bucket_distribution",0),
-                "capacity_usage_percentage": round(usage_percentage, 2),
-                "network_health": routing_info.get("network_health", {}),
-                "discovery_ready": routing_info.get("network_health", {}).get("well_distributed", False)
-            }
-        }
-
-        return status
+        if value is None:
+            # Nessun valore trovato per la chiave
+            return {"status": "not_found", "key": key, "value": None}
+        else:
+            # Valore trovato — restituisci il payload così com'è (serializzabile in JSON)
+            return {"status": "ok", "key": key, "value": value}
     except Exception as e:
-        logger.error("network_status_error", error=str(e))
-        return {"error": str(e), "status": "error"}
+        # log dell'errore per debug
+        logger.exception("Errore durante la ricerca della chiave nella rete Kademlia")
+        # Risposta d'errore
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
 
 
 if __name__ == "__main__":
