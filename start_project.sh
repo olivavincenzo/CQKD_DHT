@@ -5,7 +5,8 @@ set -e
 echo "================================================"
 echo "  Docker Cleanup (Optional)"
 echo "================================================"
-read -p "Do you want to perform a full Docker cleanup (removes ALL containers, images, volumes)? (y/n) " -n 1 -r
+read -t 5 -p "Do you want to perform a full Docker cleanup (removes ALL containers, images, volumes)? (y/n) [y]: " -n 1 -r
+REPLY=${REPLY:-y}
 echo # Move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Running docker_cleanup.sh script..."
@@ -27,7 +28,8 @@ echo "================================================
 echo "================================================"
 echo "  Log Monitoring (Optional)"
 echo "================================================"
-read -p "Do you want to start Dozzle for real-time log monitoring? (y/n) " -n 1 -r
+read -t 5 -p "Do you want to start Dozzle for real-time log monitoring? (y/n) [y]: " -n 1 -r
+REPLY=${REPLY:-y}
 echo # Move to a new line
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Starting Dozzle..."
