@@ -19,7 +19,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7000)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -50,7 +50,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7001)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -81,7 +81,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7002)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -112,7 +112,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7003)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -143,7 +143,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7004)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -174,7 +174,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7005)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -205,7 +205,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7006)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -236,7 +236,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7007)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -267,7 +267,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7008)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -298,7 +298,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7009)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -329,7 +329,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7010)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -360,7 +360,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7011)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -391,7 +391,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7012)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -422,7 +422,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7013)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -453,7 +453,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7014)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -484,7 +484,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7015)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -515,7 +515,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7016)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -546,7 +546,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7017)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -577,7 +577,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7018)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -608,7 +608,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7019)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -639,7 +639,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7020)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -670,7 +670,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7021)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -701,7 +701,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7022)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -732,7 +732,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7023)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -763,7 +763,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7024)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -794,7 +794,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7025)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -825,7 +825,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7026)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -856,7 +856,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7027)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -887,7 +887,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7028)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -918,7 +918,7 @@ services:
     networks:
       - cqkd-network
     command: ["python", "-m", "scripts.worker_node"]
-    healthcheck:  # ← NUOVO: Health check UDP
+    healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.bind(('0.0.0.0', 7029)); s.close()\""]
       interval: 30s
       timeout: 10s
@@ -934,4 +934,4 @@ services:
 networks:
   cqkd-network:
     external: true
-    name: cqkd_dht_cqkd-network # This assumes the network name is projectname_cqkd-network
+    name: cqkd_dht_cqkd-network

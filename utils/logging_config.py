@@ -9,9 +9,9 @@ def setup_logging():
     
     # ✅ IMPOSTA LOGGING PER LIBRERIE ESTERNE
     # Kademlia
-    logging.getLogger('kademlia').setLevel(logging.DEBUG)  # Mostra tutti i log da DEBUG in su
-    # Oppure per un livello meno verboso:
-    # logging.getLogger('kademlia').setLevel(logging.INFO)
+    logging.getLogger('kademlia').setLevel(logging.WARNING)  # Mostra tutti i log da DEBUG in su
+    # rpcudp
+    logging.getLogger('rpcudp').setLevel(logging.WARNING)  # Mostra solo errori
     
     # Altri logger fastidiosi (se necessario)
     logging.getLogger('asyncio').setLevel(logging.WARNING)

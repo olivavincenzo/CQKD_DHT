@@ -33,6 +33,12 @@ RUN find lib/kademlia -type d -name "__pycache__" -exec rm -r {} +
 # Copia la libreria Kademlia locale in site-packages
 COPY lib/kademlia /install/lib/python3.11/site-packages/kademlia
 
+# Pulisce i file .pyc dalla libreria locale per assicurarsi che le modifiche vengano applicate
+RUN find lib/rpcudp -type d -name "__pycache__" -exec rm -r {} +
+
+# Copia la libreria rpcudp locale in site-packages
+COPY lib/rpcudp /install/lib/python3.11/site-packages/rpcudp
+
 
 
 # Crea un utente non-root per maggiore sicurezza
