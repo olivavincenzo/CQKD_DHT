@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   bootstrap-primary:
     build:
       context: .
       dockerfile: Dockerfile
-    image: cqkd-dht-node:latest
+    image: cqkd-dht-node:bootstrap-primary 
     container_name: cqkd-bootstrap-primary
     environment:
       - DHT_PORT=5678
@@ -27,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: cqkd-dht-node:latest
+    image: cqkd-dht-node:bootstrap-secondary
     container_name: cqkd-bootstrap-secondary
     environment:
       - DHT_PORT=5679
@@ -52,7 +50,10 @@ services:
 
 
   bob:
-    image: cqkd-dht-node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:bob
     container_name: cqkd-bob
     environment:
       - DHT_PORT=6001
@@ -69,7 +70,10 @@ services:
     restart: unless-stopped
 
   alice:
-    image: cqkd-dht-node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:alice
     container_name: cqkd-alice
     environment:
       - DHT_PORT=6000

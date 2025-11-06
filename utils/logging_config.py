@@ -7,11 +7,11 @@ from config import settings
 def setup_logging():
     """Configura logging strutturato per l'applicazione"""
     
-    # ✅ SILENZIA LIBRERIE ESTERNE
+    # ✅ IMPOSTA LOGGING PER LIBRERIE ESTERNE
     # Kademlia
-    logging.getLogger('kademlia').setLevel(logging.WARNING)  # Solo WARNING ed errori
-    # Oppure completamente disabilitato:
-    # logging.getLogger('kademlia').setLevel(logging.CRITICAL)
+    logging.getLogger('kademlia').setLevel(logging.DEBUG)  # Mostra tutti i log da DEBUG in su
+    # Oppure per un livello meno verboso:
+    # logging.getLogger('kademlia').setLevel(logging.INFO)
     
     # Altri logger fastidiosi (se necessario)
     logging.getLogger('asyncio').setLevel(logging.WARNING)

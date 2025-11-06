@@ -38,7 +38,10 @@ for i in $(seq 1 $NUM_NEW_WORKERS); do
   
   cat <<EOF >> "$WORKERS_COMPOSE_FILE"
   worker-${WORKER_INDEX}:
-    image: cqkd-dht-node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:worker-${i}
     container_name: ${CONTAINER_NAME}
     environment:
       - DHT_PORT=${CURRENT_PORT}

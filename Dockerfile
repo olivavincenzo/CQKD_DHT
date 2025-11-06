@@ -1,5 +1,5 @@
 # Multi-stage build per ottimizzare dimensione immagine
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -26,6 +26,12 @@ COPY --from=builder /install /install
 
 # Copia tutto il codice sorgente dell'applicazione
 COPY . .
+
+# Pulisce i file .pyc dalla libreria locale per assicurarsi che le modifiche vengano applicate
+RUN find lib/kademlia -type d -name "__pycache__" -exec rm -r {} +
+
+# Copia la libreria Kademlia locale in site-packages
+COPY lib/kademlia /install/lib/python3.11/site-packages/kademlia
 
 
 

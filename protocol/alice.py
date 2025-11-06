@@ -585,5 +585,52 @@ async def get_network_status():
         logger.error("network_status_error", error=str(e))
         return {"error": str(e), "status": "error"}
 
+
+@app.get("/refresh-node")
+async def get_network_status():
+    """Endpoint per monitorare lo stato della rete DHT"""
+    try:
+        logger.info("Refresh_table start!")
+
+        refresh_ids= alice_node.server.protocol.get_refresh_ids()
+        logger.info(f"refresh_ids {refresh_ids}")
+        await alice_node.server._refresh_table()
+        logger.info("Refresh_table completato!")
+        routing_info = alice_node.get_routing_table_info()
+
+        # Extract nodes, sort by port, and format
+        nodes_list = routing_info.get("all_nodes", [])
+        
+        # Sort nodes by port in ascending order
+        nodes_list.sort(key=lambda n: int(n["address"].split(":")[1]))
+
+        
+
+
+        # Calcola statistiche aggiuntive
+        total_capacity = routing_info.get("total_buckets", 0) * routing_info.get("bucket_capacity", 20)
+        usage_percentage = (routing_info.get("total_nodes", 0) / total_capacity * 100) if total_capacity > 0 else 0
+
+        status = {
+            "node_id": alice_node.node_id,
+            "nodi>7000": nodes_list, # New key for sorted and formatted nodes
+            "network_metrics": {
+                "total_nodes":routing_info.get("total_nodes",0),
+                "tutti_nodi": routing_info.get("buckets_detail",0),
+                "bucket_capacity": routing_info.get("bucket_capacity",0),
+                "active_buckets": routing_info.get("active_buckets", 0),
+                "bucket_distribution": routing_info.get("bucket_distribution",0),
+                "capacity_usage_percentage": round(usage_percentage, 2),
+                "network_health": routing_info.get("network_health", {}),
+                "discovery_ready": routing_info.get("network_health", {}).get("well_distributed", False)
+            }
+        }
+
+        return status
+    except Exception as e:
+        logger.error("network_status_error", error=str(e))
+        return {"error": str(e), "status": "error"}
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8001)

@@ -1,5 +1,4 @@
 # Core DHT
-kademlia
 
 # Async e Network
 asyncio-mqtt
@@ -35,3 +34,6 @@ black
 flake8
 mypy
 isort
+
+
+rpcudp

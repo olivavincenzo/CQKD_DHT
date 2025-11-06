@@ -15,7 +15,7 @@ echo "Stopping and removing previous containers..."
 docker-compose -f docker-compose.yml -f "$WORKERS_COMPOSE_FILE" down --remove-orphans || true # `|| true` to prevent error if file doesn't exist
 
 echo "Building Docker images..."
-docker-compose build
+docker-compose build --no-cache
 
 echo "Starting bootstrap nodes, Bob, and Alice..."
 # Start only the non-worker services from the main docker-compose.yml
@@ -24,7 +24,7 @@ docker-compose up -d --wait bootstrap-primary bootstrap-secondary bob alice
 echo "Generating dynamic worker services in $WORKERS_COMPOSE_FILE..."
 # Start the YAML content for the generated file
 cat <<EOF > "$WORKERS_COMPOSE_FILE"
-version: '3.8'
+
 services:
 EOF
 
@@ -36,7 +36,10 @@ for i in $(seq 1 $NUM_WORKERS); do
   
   cat <<EOF >> "$WORKERS_COMPOSE_FILE"
   worker-${i}:
-    image: cqkd-dht-node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cqkd-dht-node:worker-${i}
     container_name: ${CONTAINER_NAME}
     environment:
       - DHT_PORT=${CURRENT_PORT}

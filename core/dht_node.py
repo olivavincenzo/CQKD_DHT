@@ -27,6 +27,7 @@ class CQKDNode:
         node_id: Optional[str] = None,
         capabilities: Optional[List[NodeRole]] = None
     ):
+        logger.info(f"Imported Server from: {Server.__module__}")
         self.port = port
         self.node_id = node_id
         # Configurazione ottimizzata per alte scalabilità
@@ -112,11 +113,11 @@ class CQKDNode:
             logger.warning("no_bootstrap_nodes", node_id=self.node_id)
             return
         try:
-            print(f"[{self.node_id}] Inizio bootstrap verso {bootstrap_nodes}...")
+            logger.info(f"[{self.node_id}] Inizio bootstrap verso {bootstrap_nodes}...")
             
             # Resolve hostnames to IP addresses to avoid socket family mismatch issues
             resolved_nodes = await self._resolve_bootstrap_nodes(bootstrap_nodes)
-            print(f"[{self.node_id}] Nodi risolti: {resolved_nodes}")
+            logger.info(f"[{self.node_id}] Nodi risolti: {resolved_nodes}")
 
             
             # Aspetta che il routing table sia popolato
@@ -135,15 +136,23 @@ class CQKDNode:
                         nodes_per_bucket.append(f"bucket_{i}: {nodes_count}")
                     total_nodes += nodes_count
                 
-                # Stampa progresso
-                if attempt == 0 or total_nodes > 0:
-                    print(f"[{self.node_id}] Tentativo {attempt + 1}/{max_attempts}: "
-                        f"{total_nodes} nodi in routing table")
-                    
-                    if nodes_per_bucket:
-                        print(f"  └─ Distribuzione: {', '.join(nodes_per_bucket)}")
+
+                logger.info(f"[{self.node_id}] Tentativo {attempt + 1}/{max_attempts}: \n"
+                f"└─ {total_nodes} nodi in routing table")
                 
-                await self.server.bootstrap(resolved_nodes)
+                if nodes_per_bucket:
+                    logger.info(f"  └─ Distribuzione: {', '.join(nodes_per_bucket)}")
+                
+                nearest_nodes =await self.server.bootstrap(resolved_nodes)
+                if(len(nearest_nodes)>0):
+                    logger.info(f"✓ [{self.node_id}] Trovati {len(nearest_nodes)} nodi più vicini:")
+                    for node in nearest_nodes:
+                        logger.info(f"  - Node ID: {node.id.hex()}")
+                        logger.info(f"    IP: {node.ip}, Porta: {node.port}")
+                        logger.info(f"    Long ID: {node.long_id}")
+
+                else:
+                    logger.info(f"✗ [{self.node_id}] Non trovati nodi vicini!")
 
                 # Dopo il tentativo di bootstrap, controlla di nuovo la routing table
                 router = self.server.protocol.router
@@ -153,8 +162,8 @@ class CQKDNode:
                     active_buckets_after = len([b for b in router.buckets if len(b.get_nodes()) > 0])
                     
                     # Routing table popolata!
-                    print(f"✓ [{self.node_id}] Bootstrap completato con successo!")
-                    print(f"  └─ Routing table: {total_nodes_after} nodi totali in {active_buckets_after} bucket attivi")
+                    logger.info(f"✓ [{self.node_id}] Bootstrap completato con successo!")
+                    logger.info(f"  └─ Routing table: {total_nodes_after} nodi totali in {active_buckets_after} bucket attivi")
                     
                     logger.info(
                         "node_bootstrapped",
