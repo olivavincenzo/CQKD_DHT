@@ -97,7 +97,7 @@ class WorkerExecutor:
                 if len(self.processed_commands) > 1000:
                     self.processed_commands = set(list(self.processed_commands)[-500:])
 
-                await self.node.delete_data(cmd_key)
+                #await self.node.delete_data(cmd_key)
 
                 
         except Exception as e:
@@ -145,7 +145,11 @@ class WorkerExecutor:
             result = await component_class.execute(
                 node=self.node,
                 **command.get('params', {})
-            )
+            ) 
+
+            component_class = self.role_components[role]
+            params = command.get("params", {})
+
             
             logger.info(
                 "worker_operation_completed",
